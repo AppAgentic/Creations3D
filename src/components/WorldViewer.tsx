@@ -20,9 +20,11 @@ interface WorldViewerProps {
 export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProps) {
   if (!worldId) {
     return (
-      <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}>
+      <div className={`rounded-xl bg-background/30 border border-border/30 flex items-center justify-center ${className}`}>
         <div className="text-center space-y-4 p-8">
-          <Globe className="h-16 w-16 mx-auto text-muted-foreground" />
+          <div className="h-16 w-16 rounded-2xl glass glass-border flex items-center justify-center mx-auto">
+            <Globe className="h-8 w-8 text-[oklch(0.7_0.15_200)]" />
+          </div>
           <div>
             <p className="text-muted-foreground">
               Your 3D world will appear here
@@ -41,7 +43,7 @@ export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProp
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Embedded 3D World Viewer */}
-      <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+      <div className="relative aspect-video rounded-xl overflow-hidden border border-border/30">
         <iframe
           src={viewerUrl}
           className="w-full h-full"
