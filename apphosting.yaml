@@ -1,0 +1,44 @@
+# Firebase App Hosting configuration
+# https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  # CPU and memory allocation
+  cpu: 1
+  memoryMiB: 512
+  # Maximum concurrent requests
+  concurrency: 80
+  # Minimum instances (0 = scale to zero)
+  minInstances: 0
+  maxInstances: 10
+
+env:
+  # Replicate API (3D Object Generation)
+  - variable: REPLICATE_API_TOKEN
+    secret: replicate-api-token
+
+  # World Labs API (3D World Generation)
+  - variable: WORLDLABS_API_KEY
+    secret: worldlabs-api-key
+
+  # Cloudflare R2 Storage
+  - variable: R2_ACCOUNT_ID
+    secret: r2-account-id
+  - variable: R2_ACCESS_KEY_ID
+    secret: r2-access-key-id
+  - variable: R2_SECRET_ACCESS_KEY
+    secret: r2-secret-access-key
+  - variable: R2_BUCKET_NAME
+    value: creations3d-models
+  - variable: R2_PUBLIC_URL
+    value: https://models.creations3d.com
+
+  # Whop Payments
+  - variable: WHOP_API_KEY
+    secret: whop-api-key
+  - variable: WHOP_WEBHOOK_SECRET
+    secret: whop-webhook-secret
+
+# Note: Firebase credentials are auto-provided by App Hosting
+# - FIREBASE_WEBAPP_CONFIG (client-side)
+# - FIREBASE_CONFIG (server-side)
+# - Application Default Credentials for Admin SDK
