@@ -2,9 +2,10 @@ import { auth } from "./firebase";
 
 /**
  * Get auth headers with the current user's Firebase ID token.
- * Returns empty object if user is not authenticated.
+ * Returns empty object if user is not authenticated or auth is not configured.
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (!auth) return {};
   const user = auth.currentUser;
   if (!user) return {};
 
