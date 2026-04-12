@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,11 +67,12 @@ const plans = [
 
 export default function PricingPage() {
   const { user, signInWithGoogle } = useAuth();
+  const router = useRouter();
 
   const handleSubscribe = async (plan: (typeof plans)[0]) => {
     // If no Whop URL, just go to generate page (free plan)
     if (!plan.whopUrl) {
-      window.location.href = "/generate";
+      router.push("/generate");
       return;
     }
 
@@ -80,7 +81,7 @@ export default function PricingPage() {
       try {
         await signInWithGoogle();
         toast.success("Signed in! Redirecting to checkout...");
-      } catch (error) {
+      } catch {
         toast.error("Please sign in to subscribe");
         return;
       }
@@ -95,7 +96,7 @@ export default function PricingPage() {
       checkoutUrl.searchParams.set("metadata[firebase_uid]", user.uid);
     }
 
-    window.location.href = checkoutUrl.toString();
+    router.push(checkoutUrl.toString());
   };
 
   return (

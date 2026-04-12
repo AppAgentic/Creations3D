@@ -26,6 +26,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { WorldViewer, WorldAssets } from "@/components/WorldViewer";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/api-client";
 
 // Dynamically import ModelViewer to avoid SSR issues with Three.js
 const ModelViewer = dynamic(
@@ -41,7 +42,7 @@ const ModelViewer = dynamic(
 );
 
 export default function GeneratePage() {
-  const { user } = useAuth();
+  useAuth(); // Ensure auth context is available
   const [mode, setMode] = useState<"text" | "image" | "world">("text");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -117,9 +118,10 @@ export default function GeneratePage() {
 
       if (mode === "text") {
         // Text to 3D API call
+        const authHeaders = await getAuthHeaders();
         response = await fetch("/api/generate/text-to-3d", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ prompt }),
         });
       } else {
@@ -127,8 +129,10 @@ export default function GeneratePage() {
         const formData = new FormData();
         formData.append("image", imageFile!);
 
+        const authHeaders = await getAuthHeaders();
         response = await fetch("/api/generate/image-to-3d", {
           method: "POST",
+          headers: { ...authHeaders },
           body: formData,
         });
       }
@@ -179,10 +183,11 @@ export default function GeneratePage() {
     try {
       let response: Response;
 
+      const authHeaders = await getAuthHeaders();
       if (worldInputType === "text") {
         response = await fetch("/api/generate/world", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({
             type: "text",
             prompt,
@@ -197,6 +202,7 @@ export default function GeneratePage() {
 
         response = await fetch("/api/generate/world", {
           method: "POST",
+          headers: { ...authHeaders },
           body: formData,
         });
       }
@@ -226,13 +232,13 @@ export default function GeneratePage() {
 
     setIsSaving(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/models/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           modelUrl,
           format: "glb",
-          userId: user?.uid || "anonymous",
         }),
       });
 

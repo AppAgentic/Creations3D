@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState, useEffect } from "react";
+import { Suspense, useRef, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -136,14 +136,6 @@ interface ModelViewerProps {
 }
 
 export function ModelViewer({ modelUrl, className = "" }: ModelViewerProps) {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (modelUrl) {
-      setIsLoading(true);
-    }
-  }, [modelUrl]);
-
   return (
     <div className={`relative w-full h-full min-h-[300px] ${className}`}>
       <Canvas

@@ -24,10 +24,10 @@ import {
   Image as ImageIcon,
   Loader2,
   Eye,
-  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { authFetch } from "@/lib/api-client";
 
 // Dynamically import ModelViewer to avoid SSR issues
 const ModelViewer = dynamic(
@@ -80,18 +80,32 @@ export default function DashboardPage() {
   const [selectedModel, setSelectedModel] = useState<SavedModel | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
-  const credits = 47; // Demo value - will be from Whop
+  const [credits, setCredits] = useState<number>(0);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && user) {
       fetchModels();
+      fetchCredits();
+    } else if (!authLoading && !user) {
+      setIsLoading(false);
     }
   }, [authLoading, user]);
 
-  const fetchModels = async () => {
-    const userId = user?.uid || "anonymous";
+  const fetchCredits = async () => {
     try {
-      const response = await fetch(`/api/models/list?userId=${userId}`);
+      const response = await authFetch("/api/user/credits");
+      const data = await response.json();
+      if (response.ok) {
+        setCredits(data.credits);
+      }
+    } catch (error) {
+      console.error("Failed to fetch credits:", error);
+    }
+  };
+
+  const fetchModels = async () => {
+    try {
+      const response = await authFetch("/api/models/list");
       const data = await response.json();
 
       if (data.success) {

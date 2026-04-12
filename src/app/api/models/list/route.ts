@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedDownloadUrl } from "@/lib/r2";
+import { authenticateRequest, isAuthError } from "@/lib/auth";
 
 const r2Client = new S3Client({
   region: "auto",
@@ -15,9 +16,13 @@ const BUCKET_NAME = process.env.R2_BUCKET_NAME || "creations3d-models";
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication — derive userId server-side
+    const authResult = await authenticateRequest(request);
+    if (isAuthError(authResult)) return authResult;
+    const { uid: userId } = authResult;
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId") || "anonymous";
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
 
     const command = new ListObjectsV2Command({
       Bucket: BUCKET_NAME,
@@ -56,11 +61,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("List models error:", error);
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to list models: ${errorMessage}` },
+      { error: "Failed to list models" },
       { status: 500 }
     );
   }

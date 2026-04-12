@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
+import { authenticateRequest, isAuthError } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
-    }
+    // Authenticate and derive userId server-side
+    const authResult = await authenticateRequest(request);
+    if (isAuthError(authResult)) return authResult;
+    const { uid: userId } = authResult;
 
     const db = adminDb();
     const userDoc = await db.collection("users").doc(userId).get();
@@ -34,64 +30,73 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Get credits error:", error);
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to get credits: ${errorMessage}` },
+      { error: "Failed to get credits" },
       { status: 500 }
     );
   }
 }
 
-// Use a credit
+// Use a credit — atomic transaction to prevent race conditions
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, amount = 1 } = body;
+    // Authenticate and derive userId server-side
+    const authResult = await authenticateRequest(request);
+    if (isAuthError(authResult)) return authResult;
+    const { uid: userId } = authResult;
 
-    if (!userId) {
+    const body = await request.json();
+    const { amount = 1 } = body;
+
+    // P0 fix: Validate amount is a positive integer to prevent credit minting
+    if (typeof amount !== "number" || !Number.isInteger(amount) || amount < 1 || amount > 100) {
       return NextResponse.json(
-        { error: "User ID is required" },
+        { error: "Amount must be a positive integer between 1 and 100" },
         { status: 400 }
       );
     }
 
     const db = adminDb();
     const userRef = db.collection("users").doc(userId);
-    const userDoc = await userRef.get();
 
-    const currentCredits = userDoc.exists ? userDoc.data()?.credits || 0 : 5;
+    // P1 fix: Use a Firestore transaction for atomic read-check-write
+    const result = await db.runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      const currentCredits = userDoc.exists ? userDoc.data()?.credits || 0 : 5;
 
-    if (currentCredits < amount) {
+      if (currentCredits < amount) {
+        return { success: false, credits: currentCredits };
+      }
+
+      const { FieldValue } = await import("firebase-admin/firestore");
+      transaction.set(
+        userRef,
+        {
+          credits: FieldValue.increment(-amount),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      return { success: true, remainingCredits: currentCredits - amount };
+    });
+
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Insufficient credits", credits: currentCredits },
+        { error: "Insufficient credits", credits: result.credits },
         { status: 402 }
       );
     }
 
-    // Deduct credits
-    const { FieldValue } = await import("firebase-admin/firestore");
-    await userRef.set(
-      {
-        credits: FieldValue.increment(-amount),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-
     return NextResponse.json({
       success: true,
       creditsUsed: amount,
-      remainingCredits: currentCredits - amount,
+      remainingCredits: result.remainingCredits,
     });
   } catch (error) {
     console.error("Use credits error:", error);
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to use credits: ${errorMessage}` },
+      { error: "Failed to use credits" },
       { status: 500 }
     );
   }

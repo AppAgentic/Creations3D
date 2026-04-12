@@ -225,12 +225,14 @@ export async function uploadMedia(
   file: Buffer | Uint8Array,
   contentType: string
 ): Promise<void> {
+  // Convert to Uint8Array for fetch body compatibility (Buffer is not valid BodyInit in strict TS)
+  const body = new Uint8Array(file.buffer, file.byteOffset, file.byteLength);
   const response = await fetch(uploadUrl, {
     method: "PUT",
     headers: {
       "Content-Type": contentType,
     },
-    body: file,
+    body: body as BodyInit,
   });
 
   if (!response.ok) {

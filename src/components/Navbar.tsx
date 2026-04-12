@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Cuboid, User, LogOut, LayoutDashboard, Loader2 } from "lucide-react";
+import { Cuboid, LogOut, LayoutDashboard, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ export function Navbar() {
     try {
       await signInWithGoogle();
       toast.success("Signed in successfully!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign in");
     }
   };
@@ -30,7 +30,7 @@ export function Navbar() {
     try {
       await signOut();
       toast.success("Signed out successfully!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out");
     }
   };

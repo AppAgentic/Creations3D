@@ -3,21 +3,37 @@ import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import crypto from "crypto";
 
-// Verify Whop webhook signature
+// Verify Whop webhook signature — fail closed on missing secret or mismatched lengths
 function verifyWebhookSignature(
   payload: string,
   signature: string,
   secret: string
 ): boolean {
+  // Fail closed: reject if secret is not configured
+  if (!secret) {
+    console.error("WHOP_WEBHOOK_SECRET is not configured");
+    return false;
+  }
+
+  // Reject empty or missing signatures
+  if (!signature) {
+    return false;
+  }
+
   const expectedSignature = crypto
     .createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  // timingSafeEqual requires same-length buffers — check before calling
+  const sigBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  if (sigBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
 }
 
 // Credit amounts for each plan
@@ -30,7 +46,16 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await request.text();
     const signature = request.headers.get("whop-signature") || "";
-    const webhookSecret = process.env.WHOP_WEBHOOK_SECRET || "";
+    const webhookSecret = process.env.WHOP_WEBHOOK_SECRET;
+
+    // Fail closed: reject if no webhook secret is configured
+    if (!webhookSecret) {
+      console.error("WHOP_WEBHOOK_SECRET environment variable is not set");
+      return NextResponse.json(
+        { error: "Webhook not configured" },
+        { status: 500 }
+      );
+    }
 
     // Verify webhook signature
     if (!verifyWebhookSignature(payload, signature, webhookSecret)) {
@@ -46,18 +71,40 @@ export async function POST(request: NextRequest) {
 
     const db = adminDb();
 
+    // P1 fix: Idempotency — check if this event was already processed
+    const eventId = event.id || event.event_id;
+    if (eventId) {
+      const eventRef = db.collection("processed_webhooks").doc(eventId);
+      const eventDoc = await eventRef.get();
+      if (eventDoc.exists) {
+        console.log(`Webhook event ${eventId} already processed, skipping`);
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Mark as processed
+      await eventRef.set({
+        action,
+        processedAt: FieldValue.serverTimestamp(),
+      });
+    }
+
     switch (action) {
       case "membership.went_valid": {
         // User subscribed or renewed
         const { user, plan } = data;
-        const userId = user.id;
+        const whopUserId = user.id;
         const planId = plan?.id?.toLowerCase() || "basic";
         const credits = PLAN_CREDITS[planId] || 50;
 
-        const userRef = db.collection("users").doc(userId);
+        // P1 fix: Use firebase_uid from metadata if available,
+        // otherwise fall back to Whop user ID
+        const firebaseUid = data.metadata?.firebase_uid || user.metadata?.firebase_uid;
+        const docId = firebaseUid || whopUserId;
+
+        const userRef = db.collection("users").doc(docId);
         await userRef.set(
           {
-            whopUserId: userId,
+            whopUserId,
+            firebaseUid: firebaseUid || null,
             email: user.email,
             plan: planId,
             credits: FieldValue.increment(credits),
@@ -67,29 +114,33 @@ export async function POST(request: NextRequest) {
           { merge: true }
         );
 
-        console.log(`User ${userId} subscribed to ${planId}, added ${credits} credits`);
+        console.log(`User ${docId} subscribed to ${planId}, added ${credits} credits`);
         break;
       }
 
       case "membership.went_invalid": {
         // Subscription cancelled or expired
         const { user } = data;
-        const userId = user.id;
+        const whopUserId = user.id;
+        const firebaseUid = data.metadata?.firebase_uid || user.metadata?.firebase_uid;
+        const docId = firebaseUid || whopUserId;
 
-        const userRef = db.collection("users").doc(userId);
+        const userRef = db.collection("users").doc(docId);
         await userRef.update({
           subscriptionStatus: "cancelled",
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        console.log(`User ${userId} subscription cancelled`);
+        console.log(`User ${docId} subscription cancelled`);
         break;
       }
 
       case "payment.succeeded": {
         // One-time payment (e.g., credit pack purchase)
         const { user, product } = data;
-        const userId = user.id;
+        const whopUserId = user.id;
+        const firebaseUid = data.metadata?.firebase_uid || user.metadata?.firebase_uid;
+        const docId = firebaseUid || whopUserId;
 
         // Determine credits based on product
         let credits = 0;
@@ -104,13 +155,18 @@ export async function POST(request: NextRequest) {
         }
 
         if (credits > 0) {
-          const userRef = db.collection("users").doc(userId);
-          await userRef.update({
-            credits: FieldValue.increment(credits),
-            updatedAt: FieldValue.serverTimestamp(),
-          });
+          const userRef = db.collection("users").doc(docId);
+          await userRef.set(
+            {
+              whopUserId,
+              firebaseUid: firebaseUid || null,
+              credits: FieldValue.increment(credits),
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
 
-          console.log(`User ${userId} purchased ${credits} credits`);
+          console.log(`User ${docId} purchased ${credits} credits`);
         }
         break;
       }

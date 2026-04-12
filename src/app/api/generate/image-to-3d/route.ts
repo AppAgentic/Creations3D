@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { imageTo3D } from "@/lib/replicate";
+import { authenticateRequest, isAuthError } from "@/lib/auth";
+import { deductCredits } from "@/lib/credits";
+
+const CREDIT_COST = 1;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await authenticateRequest(request);
+    if (isAuthError(authResult)) return authResult;
+    const { uid: userId } = authResult;
+
     // Handle both JSON and FormData
     const contentType = request.headers.get("content-type") || "";
 
@@ -20,6 +30,22 @@ export async function POST(request: NextRequest) {
       if (!imageFile) {
         return NextResponse.json(
           { error: "Image file is required" },
+          { status: 400 }
+        );
+      }
+
+      // Validate file size
+      if (imageFile.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: "Image file too large (max 10MB)" },
+          { status: 400 }
+        );
+      }
+
+      // Validate MIME type
+      if (!imageFile.type.startsWith("image/")) {
+        return NextResponse.json(
+          { error: "File must be an image" },
           { status: 400 }
         );
       }
@@ -43,6 +69,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check and deduct credits atomically before generation
+    const creditResult = await deductCredits(userId, CREDIT_COST);
+    if (!creditResult.success) {
+      return NextResponse.json(
+        { error: "Insufficient credits", credits: creditResult.currentCredits },
+        { status: 402 }
+      );
+    }
+
     // Generate 3D model using Replicate (TRELLIS)
     const result = await imageTo3D({ imageUrl });
 
@@ -61,11 +96,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Image to 3D error:", error);
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to generate 3D model: ${errorMessage}` },
+      { error: "Failed to generate 3D model. Please try again." },
       { status: 500 }
     );
   }
