@@ -11,21 +11,6 @@ import { toast } from "sonner";
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
-    credits: 5,
-    features: [
-      "5 free generations",
-      "Text to 3D",
-      "Image to 3D",
-      "GLB export",
-      "Basic support",
-    ],
-    cta: "Get Started",
-    popular: false,
-    whopUrl: null,
-  },
-  {
     name: "Basic",
     price: "$9.99",
     period: "/month",
@@ -40,7 +25,6 @@ const plans = [
     ],
     cta: "Subscribe",
     popular: true,
-    // Replace with your actual Whop checkout URL
     whopUrl: process.env.NEXT_PUBLIC_WHOP_BASIC_URL || "https://whop.com/checkout/your-basic-plan",
   },
   {
@@ -52,6 +36,7 @@ const plans = [
       "150 credits/month",
       "Text to 3D",
       "Image to 3D",
+      "3D World generation",
       "All export formats",
       "Priority queue",
       "High-quality mode",
@@ -60,7 +45,6 @@ const plans = [
     ],
     cta: "Subscribe",
     popular: false,
-    // Replace with your actual Whop checkout URL
     whopUrl: process.env.NEXT_PUBLIC_WHOP_PRO_URL || "https://whop.com/checkout/your-pro-plan",
   },
 ];
@@ -70,12 +54,6 @@ export default function PricingPage() {
   const router = useRouter();
 
   const handleSubscribe = async (plan: (typeof plans)[0]) => {
-    // If no Whop URL, just go to generate page (free plan)
-    if (!plan.whopUrl) {
-      router.push("/generate");
-      return;
-    }
-
     // If not logged in, prompt to sign in first
     if (!user) {
       try {
@@ -117,7 +95,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}

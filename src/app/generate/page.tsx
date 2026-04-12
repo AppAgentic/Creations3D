@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,13 @@ import {
   LogIn,
 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { WorldViewer, WorldAssets } from "@/components/WorldViewer";
 import { toast } from "sonner";
 import { authFetch, getAuthHeaders } from "@/lib/api-client";
@@ -104,9 +110,11 @@ export default function GeneratePage() {
     }
   };
 
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+
   const handleGenerate = async () => {
     if (!user) {
-      toast.error("Please sign in to generate models");
+      setShowAuthDialog(true);
       return;
     }
 
@@ -294,38 +302,15 @@ export default function GeneratePage() {
     setWorldAssets(null);
   };
 
-  // Auth gate for unauthenticated users
-  if (!authLoading && !user) {
-    return (
-      <div className="min-h-screen relative">
-        <Navbar />
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[oklch(0.5_0.18_265_/_0.06)] blur-[120px]" />
-        </div>
-        <main className="relative pt-32 pb-12 px-4">
-          <div className="max-w-md mx-auto text-center">
-            <div className="h-20 w-20 rounded-2xl glass glass-border flex items-center justify-center mx-auto mb-6">
-              <LogIn className="h-10 w-10 text-[oklch(0.7_0.18_265)]" />
-            </div>
-            <h1 className="text-2xl font-bold mb-3">Sign in to Generate</h1>
-            <p className="text-muted-foreground mb-8">
-              Create an account to start generating 3D models with 5 free credits.
-            </p>
-            <Button size="lg" className="glow-sm" onClick={() => signInWithGoogle()}>
-              <LogIn className="mr-2 h-4 w-4" />
-              Sign in with Google
-            </Button>
-            <p className="mt-6 text-sm text-muted-foreground">
-              Or{" "}
-              <Link href="/pricing" className="text-primary hover:underline">
-                view pricing plans
-              </Link>
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const handleSignInAndGenerate = async () => {
+    try {
+      await signInWithGoogle();
+      setShowAuthDialog(false);
+      toast.success("Signed in! You can now generate.");
+    } catch {
+      toast.error("Failed to sign in");
+    }
+  };
 
   return (
     <div className="min-h-screen relative">
@@ -733,6 +718,34 @@ export default function GeneratePage() {
           </div>
         </div>
       </main>
+
+      {/* Auth Dialog — shown when unauthenticated user tries to generate */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent className="max-w-sm glass glass-border">
+          <DialogHeader className="text-center">
+            <div className="h-16 w-16 rounded-2xl glass glass-border flex items-center justify-center mx-auto mb-2">
+              <Sparkles className="h-8 w-8 text-[oklch(0.7_0.18_265)]" />
+            </div>
+            <DialogTitle className="text-xl">Sign in to Generate</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Create a free account to start generating 3D models. Your first generations are on us.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Button
+              className="w-full glow-sm"
+              size="lg"
+              onClick={handleSignInAndGenerate}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign in with Google
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              By signing in, you agree to our terms of service.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
