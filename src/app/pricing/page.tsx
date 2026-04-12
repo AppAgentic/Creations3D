@@ -100,63 +100,68 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
       <Navbar />
 
-      <main className="pt-24 pb-12 px-4">
+      {/* Background glow */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[oklch(0.5_0.18_265_/_0.06)] blur-[120px]" />
+      </div>
+
+      <main className="relative pt-28 pb-16 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-            <p className="text-xl text-muted-foreground">
+          <div className="text-center mb-14">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
+            <p className="text-lg text-muted-foreground">
               Choose the plan that works best for you. No hidden fees.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {plans.map((plan) => (
-              <Card
+              <div
                 key={plan.name}
-                className={plan.popular ? "border-primary shadow-lg relative" : ""}
+                className={`relative rounded-2xl p-6 glass glass-border transition-all duration-300 hover:bg-[oklch(0.16_0.01_270_/_0.8)] ${
+                  plan.popular ? "glow-md gradient-border" : ""
+                }`}
               >
                 {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                     Most Popular
                   </Badge>
                 )}
-                <CardHeader className="text-center">
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
+                <div className="text-center mb-6 pt-2">
+                  <h3 className="text-xl font-semibold mb-4">{plan.name}</h3>
+                  <div>
+                    <span className="text-4xl font-bold gradient-text">{plan.price}</span>
                     {plan.period && (
                       <span className="text-muted-foreground">{plan.period}</span>
                     )}
                   </div>
-                  <p className="text-muted-foreground mt-2">
+                  <p className="text-muted-foreground mt-2 text-sm">
                     {plan.credits} credits
                   </p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-primary" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className="w-full"
-                    variant={plan.popular ? "default" : "outline"}
-                    onClick={() => handleSubscribe(plan)}
-                  >
-                    {plan.cta}
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2.5">
+                      <Check className="h-4 w-4 text-[oklch(0.7_0.18_265)] shrink-0" />
+                      <span className="text-sm text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  className={`w-full ${plan.popular ? "glow-sm" : ""}`}
+                  variant={plan.popular ? "default" : "outline"}
+                  onClick={() => handleSubscribe(plan)}
+                >
+                  {plan.cta}
+                </Button>
+              </div>
             ))}
           </div>
 
-          <div className="mt-12 text-center">
+          <div className="mt-14 text-center">
             <p className="text-muted-foreground">
               Need more credits?{" "}
               <span className="text-foreground font-medium">

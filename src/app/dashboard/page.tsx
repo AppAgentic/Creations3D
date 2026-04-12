@@ -125,7 +125,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen">
       <Navbar />
 
       <main className="pt-24 pb-12 px-4">

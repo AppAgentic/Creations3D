@@ -46,38 +46,38 @@ export function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <Cuboid className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">Creations3D</span>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <Cuboid className="h-7 w-7 text-[oklch(0.7_0.18_265)] transition-transform group-hover:rotate-12" />
+            <span className="font-bold text-lg tracking-tight">Creations3D</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-1">
             <Link
               href="/generate"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             >
               Generate
             </Link>
             <Link
               href="/pricing"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             >
               Pricing
             </Link>
             {user && (
               <Link
                 href="/dashboard"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
               >
                 Dashboard
               </Link>
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : user ? (
@@ -85,27 +85,27 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
+                    className="relative h-9 w-9 rounded-full ring-1 ring-border/50 hover:ring-primary/50 transition-all"
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-9 w-9">
                       <AvatarImage
                         src={user.photoURL || undefined}
                         alt={user.displayName || "User"}
                       />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-primary/20 text-primary text-sm">
                         {getInitials(user.displayName)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 glass glass-border">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
                       {user.displayName && (
-                        <p className="font-medium">{user.displayName}</p>
+                        <p className="font-medium text-sm">{user.displayName}</p>
                       )}
                       {user.email && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {user.email}
                         </p>
                       )}
@@ -127,10 +127,10 @@ export function Navbar() {
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" onClick={handleSignIn}>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={handleSignIn}>
                   Sign In
                 </Button>
-                <Button asChild>
+                <Button size="sm" className="glow-sm hover:glow-md transition-shadow" asChild>
                   <Link href="/generate">Get Started</Link>
                 </Button>
               </>

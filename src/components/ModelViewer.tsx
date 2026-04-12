@@ -103,7 +103,7 @@ function Scene({ modelUrl }: { modelUrl: string | null }) {
       <directionalLight position={[-10, -10, -5]} intensity={0.3} />
 
       {/* Environment for reflections */}
-      <Environment preset="studio" background={false} />
+      <Environment preset="night" background={false} />
 
       {/* Ground plane */}
       <mesh
@@ -116,7 +116,7 @@ function Scene({ modelUrl }: { modelUrl: string | null }) {
       </mesh>
 
       {/* Grid helper */}
-      <gridHelper args={[10, 10, "#888888", "#cccccc"]} position={[0, -1, 0]} />
+      <gridHelper args={[10, 10, "#333344", "#222233"]} position={[0, -1, 0]} />
 
       {/* Model */}
       {modelUrl && (
@@ -144,20 +144,20 @@ export function ModelViewer({ modelUrl, className = "" }: ModelViewerProps) {
         dpr={[1, 2]}
         className="rounded-lg"
       >
-        <color attach="background" args={["#f5f5f5"]} />
+        <color attach="background" args={["#0e0e14"]} />
         <Scene modelUrl={modelUrl} />
       </Canvas>
 
       {/* Overlay when no model */}
       {!modelUrl && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center rounded-lg pointer-events-none" style={{ background: "oklch(0.09 0.005 270 / 0.7)" }}>
           <p className="text-muted-foreground">Your 3D model will appear here</p>
         </div>
       )}
 
       {/* Controls hint */}
       {modelUrl && (
-        <div className="absolute bottom-2 left-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+        <div className="absolute bottom-2 left-2 text-xs text-muted-foreground glass glass-border px-2 py-1 rounded">
           Drag to rotate • Scroll to zoom • Shift+drag to pan
         </div>
       )}
