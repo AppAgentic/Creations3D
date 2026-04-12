@@ -116,7 +116,7 @@ function Scene({ modelUrl }: { modelUrl: string | null }) {
       </mesh>
 
       {/* Grid helper */}
-      <gridHelper args={[10, 10, "#333344", "#222233"]} position={[0, -1, 0]} />
+      <gridHelper args={[10, 20, "#1a1a2e", "#12121f"]} position={[0, -1, 0]} />
 
       {/* Model */}
       {modelUrl && (
@@ -144,7 +144,7 @@ export function ModelViewer({ modelUrl, className = "" }: ModelViewerProps) {
         dpr={[1, 2]}
         className="rounded-lg"
       >
-        <color attach="background" args={["#0e0e14"]} />
+        <color attach="background" args={["#0a0a12"]} />
         <Scene modelUrl={modelUrl} />
       </Canvas>
 

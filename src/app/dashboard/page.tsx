@@ -17,26 +17,25 @@ import {
   Cuboid,
   Download,
   Clock,
-  CreditCard,
+  Coins,
   Plus,
-  Image as ImageIcon,
   Loader2,
   Eye,
   LogIn,
   Sparkles,
+  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { authFetch } from "@/lib/api-client";
 
-// Dynamically import ModelViewer to avoid SSR issues
 const ModelViewer = dynamic(
   () => import("@/components/ModelViewer").then((mod) => mod.ModelViewer),
   {
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-cyan/50" />
       </div>
     ),
   }
@@ -62,7 +61,7 @@ function formatTimeAgo(date: Date): string {
 }
 
 function formatFileSize(bytes?: number): string {
-  if (!bytes) return "Unknown";
+  if (!bytes) return "—";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -94,9 +93,7 @@ export default function DashboardPage() {
     try {
       const response = await authFetch("/api/user/credits");
       const data = await response.json();
-      if (response.ok) {
-        setCredits(data.credits);
-      }
+      if (response.ok) setCredits(data.credits);
     } catch (error) {
       console.error("Failed to fetch credits:", error);
     }
@@ -106,10 +103,7 @@ export default function DashboardPage() {
     try {
       const response = await authFetch("/api/models/list");
       const data = await response.json();
-
-      if (data.success) {
-        setModels(data.models);
-      }
+      if (data.success) setModels(data.models);
     } catch (error) {
       console.error("Failed to fetch models:", error);
       toast.error("Failed to load your models");
@@ -118,29 +112,24 @@ export default function DashboardPage() {
     }
   };
 
-  const handleView = (model: SavedModel) => {
-    setSelectedModel(model);
-    setIsViewerOpen(true);
-  };
-
   // Auth gate
   if (!authLoading && !user) {
     return (
       <div className="min-h-screen relative">
         <Navbar />
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[oklch(0.5_0.18_265_/_0.06)] blur-[120px]" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[350px] rounded-full bg-[oklch(0.35_0.12_195_/_0.06)] blur-[120px]" />
         </div>
-        <main className="relative pt-32 pb-12 px-4">
-          <div className="max-w-md mx-auto text-center">
-            <div className="h-20 w-20 rounded-2xl glass glass-border flex items-center justify-center mx-auto mb-6">
-              <LogIn className="h-10 w-10 text-[oklch(0.7_0.18_265)]" />
+        <main className="relative pt-36 pb-12 px-4">
+          <div className="max-w-sm mx-auto text-center">
+            <div className="h-16 w-16 rounded-2xl bg-cyan/10 flex items-center justify-center mx-auto mb-5">
+              <LogIn className="h-8 w-8 text-cyan" />
             </div>
-            <h1 className="text-2xl font-bold mb-3">Sign in to View Dashboard</h1>
-            <p className="text-muted-foreground mb-8">
+            <h1 className="text-xl font-bold mb-2">Sign in to View Library</h1>
+            <p className="text-[14px] text-muted-foreground mb-7">
               Access your saved models and manage your account.
             </p>
-            <Button size="lg" className="glow-sm" onClick={() => signInWithGoogle()}>
+            <Button className="glow-sm h-10 text-[13px]" onClick={() => signInWithGoogle()}>
               <LogIn className="mr-2 h-4 w-4" />
               Sign in with Google
             </Button>
@@ -154,168 +143,149 @@ export default function DashboardPage() {
     <div className="min-h-screen relative">
       <Navbar />
 
-      {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-0 w-[400px] h-[300px] rounded-full bg-[oklch(0.4_0.15_265_/_0.04)] blur-[100px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[300px] rounded-full bg-[oklch(0.4_0.12_300_/_0.03)] blur-[100px]" />
+        <div className="absolute top-20 left-[10%] w-[350px] h-[250px] rounded-full bg-[oklch(0.35_0.12_195_/_0.04)] blur-[100px]" />
       </div>
 
       <main className="relative pt-24 pb-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
-              <p className="text-muted-foreground">
-                Manage your generations and account
-              </p>
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-cyan/8 flex items-center justify-center">
+                <LayoutGrid className="h-4.5 w-4.5 text-cyan" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold tracking-tight">Library</h1>
+                <p className="text-[12px] text-muted-foreground">Your saved 3D models</p>
+              </div>
             </div>
-            <Button className="glow-sm hover:glow-md transition-shadow" asChild>
+            <Button className="h-9 text-[13px] glow-sm hover:glow-md transition-all" asChild>
               <Link href="/generate">
-                <Plus className="mr-2 h-4 w-4" />
-                New Generation
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                New
               </Link>
             </Button>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid md:grid-cols-3 gap-5 mb-8">
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
             {[
-              {
-                icon: CreditCard,
-                label: "Available Credits",
-                value: credits,
-                color: "265",
-              },
-              {
-                icon: Cuboid,
-                label: "Saved Models",
-                value: isLoading ? "..." : models.length,
-                color: "300",
-              },
-              {
-                icon: Clock,
-                label: "This Month",
-                value: isLoading ? "..." : models.length,
-                color: "200",
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-2xl glass glass-border p-5 flex items-center gap-4"
-              >
+              { icon: Coins, label: "Credits", value: credits, accent: "195" },
+              { icon: Cuboid, label: "Models", value: isLoading ? "..." : models.length, accent: "290" },
+              { icon: Clock, label: "This Month", value: isLoading ? "..." : models.length, accent: "330" },
+            ].map((s) => (
+              <div key={s.label} className="glass-card rounded-xl p-4 flex items-center gap-3">
                 <div
-                  className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `oklch(0.7 0.18 ${stat.color} / 0.12)` }}
+                  className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: `oklch(0.65 0.18 ${s.accent} / 0.1)` }}
                 >
-                  <stat.icon
-                    className="h-6 w-6"
-                    style={{ color: `oklch(0.7 0.18 ${stat.color})` }}
-                  />
+                  <s.icon className="h-4 w-4" style={{ color: `oklch(0.75 0.18 ${s.accent})` }} />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{s.label}</p>
+                  <p className="text-xl font-bold tabular-nums">{s.value}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Saved Models */}
-          <div className="rounded-2xl glass glass-border p-6">
-            <h2 className="font-semibold mb-5">Your 3D Models</h2>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-4 py-4 animate-pulse">
-                    <div className="h-14 w-14 rounded-xl bg-muted" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-48 bg-muted rounded" />
-                      <div className="h-3 w-32 bg-muted rounded" />
+          {/* Models */}
+          <div className="glass-card rounded-2xl">
+            <div className="px-5 py-3.5 border-b border-border/15">
+              <span className="text-[13px] font-medium">All Models</span>
+            </div>
+
+            <div className="p-2">
+              {isLoading ? (
+                <div className="space-y-1 p-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 py-3 px-3 animate-pulse">
+                      <div className="h-10 w-10 rounded-lg bg-muted/50" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3.5 w-40 bg-muted/50 rounded" />
+                        <div className="h-2.5 w-28 bg-muted/30 rounded" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : models.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="h-16 w-16 rounded-2xl glass glass-border flex items-center justify-center mx-auto mb-5">
-                  <Sparkles className="h-8 w-8 text-[oklch(0.7_0.18_265)]" />
+                  ))}
                 </div>
-                <p className="text-muted-foreground mb-2">
-                  No saved models yet
-                </p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Generate your first 3D model to see it here
-                </p>
-                <Button className="glow-sm" asChild>
-                  <Link href="/generate">Create your first 3D model</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {models.map((model, index) => (
-                  <div key={model.key}>
-                    <div className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-accent/30 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-muted/50 flex items-center justify-center">
-                          <Cuboid className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm line-clamp-1 max-w-md">
-                            {extractNameFromKey(model.key)}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {model.format.toUpperCase()}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {formatFileSize(model.size)}
-                            </span>
-                            {model.lastModified && (
-                              <span className="text-xs text-muted-foreground">
-                                • {formatTimeAgo(new Date(model.lastModified))}
+              ) : models.length === 0 ? (
+                <div className="text-center py-16 px-4">
+                  <div className="h-14 w-14 rounded-2xl bg-cyan/8 flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="h-7 w-7 text-cyan/60" />
+                  </div>
+                  <p className="text-[14px] font-medium mb-1">No models yet</p>
+                  <p className="text-[12px] text-muted-foreground mb-5">
+                    Generate your first 3D model to see it here
+                  </p>
+                  <Button className="h-9 text-[13px] glow-sm" asChild>
+                    <Link href="/generate">Create your first model</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  {models.map((model, index) => (
+                    <div key={model.key}>
+                      <div className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-accent/30 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-muted/30 flex items-center justify-center group-hover:bg-muted/50 transition-colors">
+                            <Cuboid className="h-5 w-5 text-muted-foreground/60" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-medium line-clamp-1 max-w-md">
+                              {extractNameFromKey(model.key)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-medium">
+                                {model.format.toUpperCase()}
+                              </Badge>
+                              <span className="text-[11px] text-muted-foreground tabular-nums">
+                                {formatFileSize(model.size)}
                               </span>
-                            )}
+                              {model.lastModified && (
+                                <span className="text-[11px] text-muted-foreground">
+                                  • {formatTimeAgo(new Date(model.lastModified))}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 w-7 p-0 border-border/30"
+                            onClick={() => { setSelectedModel(model); setIsViewerOpen(true); }}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-7 w-7 p-0 border-border/30" asChild>
+                            <a href={model.url} download>
+                              <Download className="h-3.5 w-3.5" />
+                            </a>
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-border/50"
-                          onClick={() => handleView(model)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="border-border/50" asChild>
-                          <a href={model.url} download>
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
+                      {index < models.length - 1 && <Separator className="opacity-10 mx-3" />}
                     </div>
-                    {index < models.length - 1 && <Separator className="opacity-30" />}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Model Viewer Dialog */}
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] glass glass-border">
+        <DialogContent className="max-w-4xl h-[80vh] glass-card">
           <DialogHeader>
-            <DialogTitle>
-              {selectedModel
-                ? extractNameFromKey(selectedModel.key)
-                : "3D Model"}
+            <DialogTitle className="text-[15px]">
+              {selectedModel ? extractNameFromKey(selectedModel.key) : "3D Model"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0 h-full">
             {selectedModel && (
-              <div className="w-full h-[calc(80vh-100px)] rounded-xl overflow-hidden border border-border/30">
+              <div className="w-full h-[calc(80vh-80px)] rounded-xl overflow-hidden border border-border/15">
                 <ModelViewer modelUrl={selectedModel.url} />
               </div>
             )}
