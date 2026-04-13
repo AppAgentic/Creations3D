@@ -15,20 +15,20 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-aurora mb-7 px-3.5 py-1.5 rounded-full border border-[rgba(45,212,191,0.2)] bg-[rgba(45,212,191,0.05)]">
             <span className="w-[5px] h-[5px] rounded-full bg-aurora animate-pulse-dot" />
-            AI-Powered 3D Generation
+            AI 3D Model Generator
           </div>
 
           {/* Headline */}
           <h1 className="text-[52px] md:text-[64px] font-extrabold leading-[1.05] tracking-[-0.035em] text-white mb-5">
-            Where imagination
+            Generate 3D Models
             <br />
-            takes <em className="not-italic gradient-text">shape</em>
+            from <em className="not-italic gradient-text">Text & Images</em>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-[17px] text-[rgba(255,255,255,0.45)] max-w-[480px] mx-auto mb-9 leading-[1.65] font-normal">
-            Transform text and images into production-ready 3D assets.
-            Built for game developers, architects, and designers.
+          <p className="text-[17px] text-[rgba(255,255,255,0.45)] max-w-[520px] mx-auto mb-9 leading-[1.65] font-normal">
+            Create production-ready GLB and OBJ files in under 30 seconds.
+            AI-powered text-to-3D and image-to-3D generation for game devs, architects, and designers.
           </p>
 
           {/* CTAs */}
@@ -92,19 +92,20 @@ export default function HomePage() {
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-[32px] font-bold text-white tracking-[-0.03em] mb-2.5">
-              Built for performance
+              AI-Powered 3D Generation Tools
             </h2>
-            <p className="text-[15px] text-[rgba(255,255,255,0.4)] max-w-[420px] mx-auto">
-              Everything you need to scale your 3D asset pipeline.
+            <p className="text-[15px] text-[rgba(255,255,255,0.4)] max-w-[480px] mx-auto">
+              Generate 3D models, textured meshes, and immersive environments using AI.
+              Export to GLB, OBJ, and more.
             </p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: Type, title: "Text to 3D", desc: "Describe what you want and watch it come to life in full 3D geometry." },
-              { icon: Image, title: "Image to 3D", desc: "Convert any 2D image into a highly detailed 3D model automatically." },
-              { icon: Globe, title: "3D Worlds", desc: "Generate entire navigable 3D environments from descriptions." },
-              { icon: Zap, title: "Lightning Fast", desc: "Optimized pipelines deliver your models in seconds, not hours." },
+              { icon: Type, title: "Text to 3D Model", desc: "Type a description and generate a fully textured 3D model. Supports prompts for characters, objects, architecture, and more." },
+              { icon: Image, title: "Image to 3D Model", desc: "Upload any photo or concept art and convert it into a detailed 3D mesh with PBR textures automatically." },
+              { icon: Globe, title: "3D World Generation", desc: "Create navigable 3D environments and scenes from text or image prompts. Ideal for games and virtual experiences." },
+              { icon: Zap, title: "30-Second Generation", desc: "Get production-ready 3D assets in under 30 seconds. Export as GLB or OBJ for use in Unity, Unreal, Blender, and more." },
             ].map((f) => (
               <div key={f.title} className="aurora-card rounded-xl p-6 md:p-7">
                 <div className="w-9 h-9 rounded-lg bg-[rgba(45,212,191,0.08)] border border-[rgba(45,212,191,0.12)] flex items-center justify-center mb-4 text-aurora">
@@ -144,10 +145,11 @@ export default function HomePage() {
         <div className="max-w-[560px] mx-auto">
           <div className="aurora-card rounded-2xl p-12 md:p-14 text-center">
             <h2 className="text-[28px] font-bold text-white tracking-[-0.02em] mb-3">
-              Ready to create?
+              Start Generating 3D Models Today
             </h2>
             <p className="text-[14px] text-[rgba(255,255,255,0.4)] mb-7">
-              Join thousands of creators building the future of spatial content.
+              No 3D experience needed. Type a prompt or upload an image and get a
+              downloadable 3D model in seconds.
             </p>
             <Button
               className="h-[46px] px-7 text-[14px] font-bold bg-aurora text-background hover:bg-aurora-hover transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(45,212,191,0.2)] rounded-lg"

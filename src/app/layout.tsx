@@ -17,10 +17,23 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Creations3D — Where Imagination Takes Shape",
+  title: "Creations3D — AI 3D Model Generator | Text to 3D & Image to 3D",
   description:
-    "Transform text and images into production-ready 3D models in seconds. Built for game developers, architects, and designers.",
-  keywords: ["3D", "AI", "model generation", "text to 3D", "image to 3D"],
+    "Generate production-ready 3D models from text prompts and images in under 30 seconds. Export GLB & OBJ files for Unity, Unreal, Blender. AI-powered text-to-3D and image-to-3D for game developers, architects, and designers.",
+  keywords: [
+    "AI 3D model generator",
+    "text to 3D",
+    "image to 3D",
+    "3D model from text",
+    "3D model from image",
+    "AI 3D generation",
+    "GLB generator",
+    "OBJ generator",
+    "3D asset generator",
+    "AI 3D tool",
+    "generate 3D models",
+    "3D model maker",
+  ],
 };
 
 export default function RootLayout({
