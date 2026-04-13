@@ -21,7 +21,7 @@ function FloatingGeo() {
       <Float speed={1.8} rotationIntensity={0.3} floatIntensity={1.2}>
         <Icosahedron args={[1.3, 4]} position={[0, 0, 0]}>
           <MeshDistortMaterial
-            color="#00d4ff"
+            color="#2dd4bf"
             roughness={0.12}
             metalness={0.92}
             distort={0.22}
@@ -61,7 +61,7 @@ function FloatingGeo() {
       {/* Wireframe ring 1 */}
       <Float speed={1.2} rotationIntensity={0.4} floatIntensity={0.6}>
         <Torus args={[2.2, 0.012, 8, 80]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <meshBasicMaterial color="#00d4ff" opacity={0.18} transparent />
+          <meshBasicMaterial color="#2dd4bf" opacity={0.18} transparent />
         </Torus>
       </Float>
 
@@ -98,7 +98,7 @@ function Particles() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial color="#00d4ff" size={0.018} transparent opacity={0.4} sizeAttenuation />
+      <pointsMaterial color="#2dd4bf" size={0.018} transparent opacity={0.4} sizeAttenuation />
     </points>
   );
 }
@@ -113,7 +113,7 @@ export function Hero3D() {
         style={{ background: "transparent" }}
       >
         <ambientLight intensity={0.25} />
-        <directionalLight position={[5, 5, 5]} intensity={0.7} color="#00d4ff" />
+        <directionalLight position={[5, 5, 5]} intensity={0.7} color="#2dd4bf" />
         <directionalLight position={[-5, -3, 5]} intensity={0.35} color="#c026d3" />
         <pointLight position={[0, 3, 2]} intensity={0.4} color="#7c3aed" />
         <FloatingGeo />

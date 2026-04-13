@@ -2,146 +2,175 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Hero3DWrapper } from "@/components/Hero3DWrapper";
-import { Cuboid, Image, Type, Zap, Globe, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Type, Image, Globe, Zap } from "lucide-react";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background relative selection:bg-cyan/30 selection:text-cyan-foreground overflow-x-hidden">
+    <div className="min-h-screen">
       <Navbar />
 
-      {/* Subtle background glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
-
-      <main className="relative z-10">
-        {/* Hero Section */}
-        <section className="pt-32 pb-16 md:pt-48 md:pb-32 px-4 max-w-7xl mx-auto flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan/10 text-cyan text-sm font-medium mb-8 border border-cyan/20">
-            <Sparkles className="h-4 w-4" />
-            <span>Next-gen 3D generation is here</span>
+      {/* ═══ Hero ═══ */}
+      <section className="pt-12 pb-16 px-6 md:px-10">
+        <div className="max-w-[720px] mx-auto text-center" style={{ paddingTop: "100px" }}>
+          {/* Badge */}
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-aurora mb-7 px-3.5 py-1.5 rounded-full border border-[rgba(45,212,191,0.2)] bg-[rgba(45,212,191,0.05)]">
+            <span className="w-[5px] h-[5px] rounded-full bg-aurora animate-pulse-dot" />
+            AI-Powered 3D Generation
           </div>
-          
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl text-foreground">
-            Create 3D Models <br />
-            <span className="gradient-text">In Seconds</span>
+
+          {/* Headline */}
+          <h1 className="text-[52px] md:text-[64px] font-extrabold leading-[1.05] tracking-[-0.035em] text-white mb-5">
+            Where imagination
+            <br />
+            takes <em className="not-italic gradient-text">shape</em>
           </h1>
-          
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 tracking-tight">
-            Transform text prompts and 2D images into production-ready 3D assets. 
-            Powered by advanced AI for creators, developers, and studios.
+
+          {/* Subtitle */}
+          <p className="text-[17px] text-[rgba(255,255,255,0.45)] max-w-[480px] mx-auto mb-9 leading-[1.65] font-normal">
+            Transform text and images into production-ready 3D assets.
+            Built for game developers, architects, and designers.
           </p>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base bg-cyan text-black hover:bg-cyan/90 shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all" asChild>
+
+          {/* CTAs */}
+          <div className="flex gap-3 justify-center">
+            <Button
+              size="lg"
+              className="h-[46px] px-7 text-[14px] font-bold bg-aurora text-background hover:bg-aurora-hover transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(45,212,191,0.2)] rounded-lg"
+              asChild
+            >
               <Link href="/generate">
-                Start Generating <ArrowRight className="ml-2 h-4 w-4" />
+                <Sparkles className="mr-2 h-4 w-4" />
+                Start Generating
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base bg-background/50 backdrop-blur-sm border-border/50 hover:bg-muted/50" asChild>
-              <Link href="/dashboard">View Library</Link>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-[46px] px-7 text-[14px] font-semibold bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)] hover:text-white rounded-lg"
+              asChild
+            >
+              <Link href="/pricing">
+                View Plans <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 3D Scene Viewer */}
-        <section className="px-4 max-w-6xl mx-auto mb-32">
-          <div className="relative aspect-video rounded-3xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-sm shadow-2xl">
-            {/* Radial fade overlay */}
-            <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] z-10" />
-            <div className="absolute inset-0 z-0">
+      {/* ═══ 3D Viewport ═══ */}
+      <section className="px-6 md:px-10 mb-24">
+        <div className="max-w-[900px] mx-auto">
+          <div className="relative aspect-video rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] overflow-hidden">
+            {/* Ambient radial glows inside viewport */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: "radial-gradient(ellipse 300px 200px at 30% 40%, rgba(45,212,191,0.08), transparent), radial-gradient(ellipse 250px 180px at 70% 60%, rgba(99,102,241,0.06), transparent)"
+            }} />
+            {/* Grid */}
+            <div className="absolute inset-0" style={{
+              backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
+              backgroundSize: "40px 40px"
+            }} />
+            {/* 3D scene */}
+            <div className="absolute inset-0 z-10">
               <Hero3DWrapper />
             </div>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="px-4 max-w-5xl mx-auto mb-32">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
-            <div className="flex flex-col items-center text-center">
-              <span className="text-3xl font-bold tracking-tighter text-foreground">50K+</span>
-              <span className="text-sm font-medium text-muted-foreground mt-1">Models Generated</span>
+            {/* Labels */}
+            <div className="absolute bottom-4 left-5 text-[11px] text-[rgba(255,255,255,0.2)] tracking-[0.08em] uppercase font-medium z-20">
+              Perspective · 45°
             </div>
-            <div className="flex flex-col items-center text-center">
-              <span className="text-3xl font-bold tracking-tighter text-foreground">&lt;30s</span>
-              <span className="text-sm font-medium text-muted-foreground mt-1">Average Time</span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <span className="text-3xl font-bold tracking-tighter text-foreground">3</span>
-              <span className="text-sm font-medium text-muted-foreground mt-1">AI Engines</span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <span className="text-3xl font-bold tracking-tighter text-foreground">GLB/OBJ</span>
-              <span className="text-sm font-medium text-muted-foreground mt-1">Export Formats</span>
+            <div className="absolute bottom-4 right-5 flex gap-2.5 text-[10px] font-semibold tracking-[0.06em] z-20">
+              <span className="text-red-500">X</span>
+              <span className="text-green-500">Y</span>
+              <span className="text-blue-500">Z</span>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features Section */}
-        <section className="px-4 max-w-7xl mx-auto mb-32">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">Built for performance</h2>
-            <p className="text-muted-foreground">Everything you need to scale your 3D asset pipeline.</p>
+      {/* ═══ Features ═══ */}
+      <section className="px-6 md:px-10 mb-24">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-[32px] font-bold text-white tracking-[-0.03em] mb-2.5">
+              Built for performance
+            </h2>
+            <p className="text-[15px] text-[rgba(255,255,255,0.4)] max-w-[420px] mx-auto">
+              Everything you need to scale your 3D asset pipeline.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              {
-                icon: Type,
-                title: "Text to 3D",
-                description: "Describe what you want and watch it come to life in full 3D geometry.",
-              },
-              {
-                icon: Image,
-                title: "Image to 3D",
-                description: "Convert any 2D image into a highly detailed 3D model automatically.",
-              },
-              {
-                icon: Zap,
-                title: "Lightning Fast",
-                description: "Optimized pipelines deliver your models in seconds, not hours.",
-              },
-              {
-                icon: Globe,
-                title: "Web Ready",
-                description: "Export optimized GLB files ready for AR, VR, and web deployment.",
-              },
-            ].map((feature, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                <div className="h-10 w-10 rounded-lg bg-cyan/10 flex items-center justify-center mb-4">
-                  <feature.icon className="h-5 w-5 text-cyan" />
+              { icon: Type, title: "Text to 3D", desc: "Describe what you want and watch it come to life in full 3D geometry." },
+              { icon: Image, title: "Image to 3D", desc: "Convert any 2D image into a highly detailed 3D model automatically." },
+              { icon: Globe, title: "3D Worlds", desc: "Generate entire navigable 3D environments from descriptions." },
+              { icon: Zap, title: "Lightning Fast", desc: "Optimized pipelines deliver your models in seconds, not hours." },
+            ].map((f) => (
+              <div key={f.title} className="aurora-card rounded-xl p-6 md:p-7">
+                <div className="w-9 h-9 rounded-lg bg-[rgba(45,212,191,0.08)] border border-[rgba(45,212,191,0.12)] flex items-center justify-center mb-4 text-aurora">
+                  <f.icon className="h-[18px] w-[18px]" />
                 </div>
-                <h3 className="text-lg font-semibold tracking-tight mb-2 text-foreground">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                <h3 className="text-[15px] font-bold text-white tracking-[-0.01em] mb-2">{f.title}</h3>
+                <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA Section */}
-        <section className="px-4 max-w-4xl mx-auto mb-32 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-foreground">Ready to create?</h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            Join thousands of creators building the next generation of spatial computing experiences.
-          </p>
-          <Button size="lg" className="h-12 px-8 text-base bg-cyan text-black hover:bg-cyan/90 shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all" asChild>
-            <Link href="/generate">Start for free</Link>
-          </Button>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-4 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Cuboid className="h-5 w-5 text-cyan" />
-            <span className="font-semibold tracking-tight text-foreground">Creations3D</span>
+      {/* ═══ Stats ═══ */}
+      <section className="px-6 md:px-10 mb-24">
+        <div className="max-w-[900px] mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            {[
+              { value: "2.4M", label: "Models Generated" },
+              { value: "30s", label: "Average Time" },
+              { value: "12K+", label: "Active Creators" },
+              { value: "4.9", label: "User Rating" },
+            ].map((s) => (
+              <div key={s.label}>
+                <div className="text-[36px] font-extrabold text-white tracking-[-0.03em] mb-1">
+                  {s.value}
+                </div>
+                <div className="text-[13px] text-[rgba(255,255,255,0.35)] font-medium">{s.label}</div>
+              </div>
+            ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Creations3D. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Twitter</Link>
+        </div>
+      </section>
+
+      {/* ═══ CTA ═══ */}
+      <section className="px-6 md:px-10 mb-24">
+        <div className="max-w-[560px] mx-auto">
+          <div className="aurora-card rounded-2xl p-12 md:p-14 text-center">
+            <h2 className="text-[28px] font-bold text-white tracking-[-0.02em] mb-3">
+              Ready to create?
+            </h2>
+            <p className="text-[14px] text-[rgba(255,255,255,0.4)] mb-7">
+              Join thousands of creators building the future of spatial content.
+            </p>
+            <Button
+              className="h-[46px] px-7 text-[14px] font-bold bg-aurora text-background hover:bg-aurora-hover transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(45,212,191,0.2)] rounded-lg"
+              asChild
+            >
+              <Link href="/generate">Start for free</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Footer ═══ */}
+      <footer className="px-6 md:px-10 py-10 border-t border-[rgba(255,255,255,0.04)]">
+        <div className="max-w-[1200px] mx-auto flex justify-between items-center">
+          <span className="text-[12px] text-[rgba(255,255,255,0.25)]">
+            &copy; {new Date().getFullYear()} Creations3D
+          </span>
+          <div className="flex gap-6">
+            {["Terms", "Privacy", "Contact"].map((l) => (
+              <Link key={l} href="#" className="text-[12px] text-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.6)] transition-colors">
+                {l}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>

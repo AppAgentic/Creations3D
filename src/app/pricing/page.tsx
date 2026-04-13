@@ -69,7 +69,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-background">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-aurora/10 blur-[100px] rounded-full pointer-events-none" />
       
       <Navbar />
 
@@ -84,11 +84,11 @@ export default function PricingPage() {
             <div
               key={plan.name}
               className={`relative flex flex-col p-8 rounded-2xl bg-card shadow-md ${
-                plan.popular ? "ring-1 ring-cyan-500" : "border border-border"
+                plan.popular ? "ring-1 ring-aurora" : "border border-border"
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-aurora text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
                   <Sparkles className="w-3 h-3" />
                   Most Popular
                 </div>
@@ -97,7 +97,7 @@ export default function PricingPage() {
               <div className="mb-6">
                 <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-500">
+                  <span className="text-4xl font-bold gradient-text">
                     ${plan.price}
                   </span>
                   <span className="text-muted-foreground">/month</span>
@@ -108,7 +108,7 @@ export default function PricingPage() {
               <ul className="flex-1 space-y-4 mb-8">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-cyan-500 shrink-0" />
+                    <Check className="w-5 h-5 text-aurora shrink-0" />
                     <span className="text-sm">{feature}</span>
                   </li>
                 ))}
@@ -116,7 +116,7 @@ export default function PricingPage() {
 
               <Button
                 onClick={() => handleSubscribe(plan.whopUrl)}
-                className={`w-full ${plan.popular ? "bg-cyan-500 hover:bg-cyan-600 text-white" : ""}`}
+                className={`w-full ${plan.popular ? "bg-aurora hover:bg-aurora-hover text-white" : ""}`}
                 variant={plan.popular ? "default" : "outline"}
               >
                 Subscribe

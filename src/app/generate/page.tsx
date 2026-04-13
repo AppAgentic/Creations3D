@@ -42,7 +42,7 @@ const ModelViewer = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-cyan/50" />
+        <Loader2 className="h-6 w-6 animate-spin text-aurora/50" />
       </div>
     ),
   }
@@ -269,7 +269,7 @@ export default function GeneratePage() {
 
         {isGenerating ? (
           <div className="flex flex-col items-center justify-center space-y-4 z-10 pointer-events-none">
-            <Loader2 className="h-8 w-8 animate-spin text-cyan/60" />
+            <Loader2 className="h-8 w-8 animate-spin text-aurora/60" />
             <p className="text-[14px] text-muted-foreground font-medium">
               {mode === "world" ? "Creating your 3D world..." : "Creating your 3D model..."}
             </p>
@@ -291,7 +291,7 @@ export default function GeneratePage() {
               <div className="w-full h-full flex items-center justify-center pointer-events-none">
                 <div className="text-center space-y-4">
                   <div className="h-16 w-16 rounded-2xl bg-background/30 border border-border/30 flex items-center justify-center mx-auto backdrop-blur-sm">
-                    <Wand2 className="h-8 w-8 text-cyan/50" />
+                    <Wand2 className="h-8 w-8 text-aurora/50" />
                   </div>
                   <p className="text-[14px] text-muted-foreground">Ready to generate</p>
                 </div>
@@ -308,8 +308,8 @@ export default function GeneratePage() {
         <div className="absolute top-[80px] bottom-6 left-6 w-[380px] pointer-events-auto bg-background/90 backdrop-blur-2xl border border-border/30 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
           {/* Panel Header */}
           <div className="px-5 py-4 border-b border-border/20 flex items-center gap-3 bg-background/40">
-            <div className="h-8 w-8 rounded-lg bg-cyan/10 flex items-center justify-center">
-              <Wand2 className="h-4.5 w-4.5 text-cyan" />
+            <div className="h-8 w-8 rounded-lg bg-aurora/10 flex items-center justify-center">
+              <Wand2 className="h-4.5 w-4.5 text-aurora" />
             </div>
             <div>
               <h2 className="text-[14px] font-semibold tracking-tight">Create</h2>
@@ -326,21 +326,21 @@ export default function GeneratePage() {
               <TabsList className="grid w-full grid-cols-3 bg-muted/40 p-1 rounded-xl h-auto">
                 <TabsTrigger
                   value="text"
-                  className="flex items-center gap-1.5 text-[12px] py-1.5 rounded-lg data-[state=active]:bg-cyan/10 data-[state=active]:text-cyan"
+                  className="flex items-center gap-1.5 text-[12px] py-1.5 rounded-lg data-[state=active]:bg-aurora/10 data-[state=active]:text-aurora"
                 >
                   <Type className="h-3.5 w-3.5" />
                   Text
                 </TabsTrigger>
                 <TabsTrigger
                   value="image"
-                  className="flex items-center gap-1.5 text-[12px] py-1.5 rounded-lg data-[state=active]:bg-violet/10 data-[state=active]:text-violet"
+                  className="flex items-center gap-1.5 text-[12px] py-1.5 rounded-lg data-[state=active]:bg-aurora/10 data-[state=active]:text-aurora"
                 >
                   <ImageIcon className="h-3.5 w-3.5" />
                   Image
                 </TabsTrigger>
                 <TabsTrigger
                   value="world"
-                  className="flex items-center gap-1.5 text-[12px] py-1.5 rounded-lg data-[state=active]:bg-magenta/10 data-[state=active]:text-magenta"
+                  className="flex items-center gap-1.5 text-[12px] py-1.5 rounded-lg data-[state=active]:bg-aurora/10 data-[state=active]:text-aurora"
                 >
                   <Globe className="h-3.5 w-3.5" />
                   World
@@ -357,7 +357,7 @@ export default function GeneratePage() {
                   placeholder="A cute low-poly cat sitting on a cushion..."
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-[140px] bg-background/40 border-border/30 text-[13px] resize-none placeholder:text-muted-foreground/40 focus:border-cyan/40 focus:ring-cyan/20"
+                  className="min-h-[140px] bg-background/40 border-border/30 text-[13px] resize-none placeholder:text-muted-foreground/40 focus:border-aurora/40 focus:ring-aurora/20"
                   disabled={isGenerating}
                 />
                 <p className="text-[11px] text-muted-foreground/60">
@@ -373,8 +373,8 @@ export default function GeneratePage() {
                 <div
                   className={`rounded-xl border-2 border-dashed p-6 text-center transition-all cursor-pointer ${
                     imagePreview
-                      ? "border-violet/30 bg-violet/5"
-                      : "border-border/30 hover:border-violet/20 hover:bg-violet/5"
+                      ? "border-aurora/30 bg-aurora/5"
+                      : "border-border/30 hover:border-aurora/20 hover:bg-aurora/5"
                   }`}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
@@ -445,11 +445,11 @@ export default function GeneratePage() {
                         <RadioGroupItem value={q.value} id={q.value} className="peer sr-only" disabled={isGenerating} />
                         <Label
                           htmlFor={q.value}
-                          className="flex flex-col items-center rounded-xl border border-border/30 bg-background/30 p-3 cursor-pointer transition-all hover:bg-magenta/5 peer-data-[state=checked]:border-magenta/40 peer-data-[state=checked]:bg-magenta/8"
+                          className="flex flex-col items-center rounded-xl border border-border/30 bg-background/30 p-3 cursor-pointer transition-all hover:bg-aurora/5 peer-data-[state=checked]:border-aurora/40 peer-data-[state=checked]:bg-aurora/8"
                         >
                           <span className="text-[12px] font-medium">{q.label}</span>
                           <span className="text-[10px] text-muted-foreground">{q.time}</span>
-                          <span className="text-[10px] text-magenta mt-0.5">{q.cost} credits</span>
+                          <span className="text-[10px] text-aurora mt-0.5">{q.cost} credits</span>
                         </Label>
                       </div>
                     ))}
@@ -484,14 +484,14 @@ export default function GeneratePage() {
                       placeholder="A cozy coffee shop with warm lighting..."
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      className="min-h-[100px] bg-background/40 border-border/30 text-[13px] resize-none placeholder:text-muted-foreground/40 focus:border-magenta/40 focus:ring-magenta/20"
+                      className="min-h-[100px] bg-background/40 border-border/30 text-[13px] resize-none placeholder:text-muted-foreground/40 focus:border-aurora/40 focus:ring-magenta/20"
                       disabled={isGenerating}
                     />
                   </div>
                 ) : (
                   <div
                     className={`rounded-xl border-2 border-dashed p-5 text-center transition-all ${
-                      imagePreview ? "border-magenta/30 bg-magenta/5" : "border-border/30 hover:border-magenta/20"
+                      imagePreview ? "border-aurora/30 bg-aurora/5" : "border-border/30 hover:border-aurora/20"
                     }`}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
@@ -587,7 +587,7 @@ export default function GeneratePage() {
         {/* Top Right Credits Pill */}
         {credits !== null && (
           <div className="absolute top-[80px] right-6 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-border/30 text-[12px] font-medium shadow-sm">
-            <Coins className="h-3.5 w-3.5 text-cyan" />
+            <Coins className="h-3.5 w-3.5 text-aurora" />
             <span className="tabular-nums">{credits}</span>
             <span className="text-muted-foreground">credits</span>
           </div>
@@ -621,10 +621,10 @@ export default function GeneratePage() {
 
       {/* ═══ Auth Dialog ═══ */}
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="max-w-sm glass-card gradient-border">
+        <DialogContent className="max-w-sm aurora-panel gradient-border">
           <DialogHeader className="text-center">
-            <div className="h-14 w-14 rounded-2xl bg-cyan/10 flex items-center justify-center mx-auto mb-2">
-              <Sparkles className="h-7 w-7 text-cyan" />
+            <div className="h-14 w-14 rounded-2xl bg-aurora/10 flex items-center justify-center mx-auto mb-2">
+              <Sparkles className="h-7 w-7 text-aurora" />
             </div>
             <DialogTitle className="text-lg">Sign in to Generate</DialogTitle>
             <DialogDescription className="text-[13px] text-muted-foreground">

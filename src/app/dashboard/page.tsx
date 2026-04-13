@@ -35,7 +35,7 @@ const ModelViewer = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-cyan/50" />
+        <Loader2 className="h-6 w-6 animate-spin text-aurora/50" />
       </div>
     ),
   }
@@ -122,8 +122,8 @@ export default function DashboardPage() {
         </div>
         <main className="relative pt-36 pb-12 px-4">
           <div className="max-w-sm mx-auto text-center">
-            <div className="h-16 w-16 rounded-2xl bg-cyan/10 flex items-center justify-center mx-auto mb-5">
-              <LogIn className="h-8 w-8 text-cyan" />
+            <div className="h-16 w-16 rounded-2xl bg-aurora/10 flex items-center justify-center mx-auto mb-5">
+              <LogIn className="h-8 w-8 text-aurora" />
             </div>
             <h1 className="text-xl font-bold mb-2">Sign in to View Library</h1>
             <p className="text-[14px] text-muted-foreground mb-7">
@@ -152,8 +152,8 @@ export default function DashboardPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-cyan/8 flex items-center justify-center">
-                <LayoutGrid className="h-4.5 w-4.5 text-cyan" />
+              <div className="h-9 w-9 rounded-xl bg-aurora/8 flex items-center justify-center">
+                <LayoutGrid className="h-4.5 w-4.5 text-aurora" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold tracking-tight">Library</h1>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
               { icon: Cuboid, label: "Models", value: isLoading ? "..." : models.length, accent: "290" },
               { icon: Clock, label: "This Month", value: isLoading ? "..." : models.length, accent: "330" },
             ].map((s) => (
-              <div key={s.label} className="glass-card rounded-xl p-4 flex items-center gap-3">
+              <div key={s.label} className="aurora-card rounded-xl p-4 flex items-center gap-3">
                 <div
                   className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: `oklch(0.65 0.18 ${s.accent} / 0.1)` }}
@@ -191,7 +191,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Models */}
-          <div className="glass-card rounded-2xl">
+          <div className="aurora-card rounded-2xl">
             <div className="px-5 py-3.5 border-b border-border/15">
               <span className="text-[13px] font-medium">All Models</span>
             </div>
@@ -211,8 +211,8 @@ export default function DashboardPage() {
                 </div>
               ) : models.length === 0 ? (
                 <div className="text-center py-16 px-4">
-                  <div className="h-14 w-14 rounded-2xl bg-cyan/8 flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="h-7 w-7 text-cyan/60" />
+                  <div className="h-14 w-14 rounded-2xl bg-aurora/8 flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="h-7 w-7 text-aurora/60" />
                   </div>
                   <p className="text-[14px] font-medium mb-1">No models yet</p>
                   <p className="text-[12px] text-muted-foreground mb-5">
@@ -277,7 +277,7 @@ export default function DashboardPage() {
       </main>
 
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] glass-card">
+        <DialogContent className="max-w-4xl h-[80vh] aurora-card">
           <DialogHeader>
             <DialogTitle className="text-[15px]">
               {selectedModel ? extractNameFromKey(selectedModel.key) : "3D Model"}

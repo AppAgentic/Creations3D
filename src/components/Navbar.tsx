@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Cuboid } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,121 +10,132 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const getInitials = (name: string | null) => {
-  if (!name) return "U";
-  return name.slice(0, 2).toUpperCase();
-};
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 
 export function Navbar() {
-  const { user, signInWithGoogle, signOut } = useAuth();
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
   const pathname = usePathname();
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-    } catch (error) {
-      console.error("Sign in error:", error);
+      toast.success("Signed in successfully!");
+    } catch {
+      toast.error("Failed to sign in");
     }
   };
 
   const handleSignOut = async () => {
     try {
       await signOut();
-    } catch (error) {
-      console.error("Sign out error:", error);
+      toast.success("Signed out successfully!");
+    } catch {
+      toast.error("Failed to sign out");
     }
   };
 
+  const getInitials = (name: string | null) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const navLinks = [
+    { href: "/generate", label: "Generate" },
+    { href: "/pricing", label: "Pricing" },
+    ...(user ? [{ href: "/dashboard", label: "Library" }] : []),
+  ];
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border/40 bg-background/80 px-6 backdrop-blur-xl">
-      <div className="flex items-center gap-2">
-        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-          <Cuboid className="h-5 w-5" />
-          <span className="text-sm font-semibold tracking-tight">Creations3D</span>
+    <nav className="fixed top-0 left-0 right-0 z-50 h-12 flex items-center bg-[rgba(5,5,8,0.8)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.04)]">
+      <div className="max-w-[1200px] mx-auto w-full px-6 md:px-10 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-[22px] h-[22px] rounded-[5px] bg-gradient-to-br from-aurora to-[#14b8a6] flex items-center justify-center text-[11px] text-background font-extrabold">
+            C
+          </div>
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-white">
+            Creations3D
+          </span>
         </Link>
-      </div>
 
-      <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:flex items-center gap-6">
-        <Link
-          href="/generate"
-          className={`text-[13px] font-medium transition-colors hover:text-foreground ${
-            pathname === "/generate" ? "text-foreground" : "text-muted-foreground"
-          }`}
-        >
-          Generate
-        </Link>
-        <Link
-          href="/pricing"
-          className={`text-[13px] font-medium transition-colors hover:text-foreground ${
-            pathname === "/pricing" ? "text-foreground" : "text-muted-foreground"
-          }`}
-        >
-          Pricing
-        </Link>
-        {user && (
-          <Link
-            href="/dashboard"
-            className={`text-[13px] font-medium transition-colors hover:text-foreground ${
-              pathname === "/dashboard" ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            Dashboard
-          </Link>
-        )}
-      </nav>
+        {/* Center nav */}
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`text-[13px] font-medium transition-colors ${
+                pathname === link.href
+                  ? "text-aurora"
+                  : "text-[rgba(255,255,255,0.5)] hover:text-[rgba(255,255,255,0.9)]"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
 
-      <div className="flex items-center gap-3">
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-opacity hover:opacity-80">
-                <Avatar className="h-8 w-8 border border-border/50">
-                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User avatar"} />
-                  <AvatarFallback className="bg-secondary text-secondary-foreground text-[10px]">
-                    {getInitials(user.displayName)}
-                  </AvatarFallback>
-                </Avatar>
+        {/* Right */}
+        <div className="flex items-center gap-3">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-[rgba(255,255,255,0.3)]" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-aurora transition-opacity hover:opacity-80">
+                  <Avatar className="h-7 w-7 border border-[rgba(255,255,255,0.08)]">
+                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
+                    <AvatarFallback className="bg-[rgba(45,212,191,0.1)] text-aurora text-[10px] font-semibold">
+                      {getInitials(user.displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 bg-[#0a0a0f] border-[rgba(255,255,255,0.06)]">
+                <div className="flex flex-col space-y-0.5 p-2">
+                  <p className="text-sm font-medium truncate">{user.displayName || "User"}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.04)]" />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard">Library</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/generate">Generate</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.04)]" />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-400 focus:text-red-400">
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <button
+                onClick={handleSignIn}
+                className="hidden md:inline text-[13px] font-medium text-[rgba(255,255,255,0.5)] hover:text-[rgba(255,255,255,0.9)] transition-colors"
+              >
+                Sign In
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="flex flex-col space-y-1 p-2">
-                <p className="text-sm font-medium leading-none truncate">{user.displayName || "User"}</p>
-                <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link href="/dashboard">Dashboard</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link href="/generate">Generate Models</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-500 focus:text-red-500">
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignIn}
-              className="hidden md:inline-flex text-sm h-8 px-3"
-            >
-              Sign In
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSignIn}
-              className="text-sm h-8 px-4 rounded-full"
-            >
-              Get Started
-            </Button>
-          </>
-        )}
+              <Button
+                size="sm"
+                className="h-7 px-4 text-[12px] font-semibold bg-aurora text-background hover:bg-aurora-hover transition-all rounded-md"
+                asChild
+              >
+                <Link href="/generate">Start Creating</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
-    </header>
+    </nav>
   );
 }
