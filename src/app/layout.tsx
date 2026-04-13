@@ -1,26 +1,22 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
-import { Providers } from "@/components/Providers";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
+import { Toaster } from "@/components/ui/sonner";
 
-const outfit = Outfit({
+const geistSans = Geist({
   variable: "--font-body",
   subsets: ["latin"],
-  display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
   variable: "--font-mono-family",
   subsets: ["latin"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Creations3D - AI-Powered 3D Model Generation",
-  description:
-    "Generate stunning 3D models from text or images using AI. Create production-ready 3D assets in seconds.",
-  keywords: ["3D", "AI", "model generation", "text to 3D", "image to 3D"],
+  title: "Creations3D",
+  description: "3D generation platform",
 };
 
 export default function RootLayout({
@@ -30,20 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased noise`}
-      >
-        <Providers>{children}</Providers>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "oklch(0.12 0.015 260)",
-              border: "1px solid oklch(0.22 0.02 260 / 0.5)",
-              color: "oklch(0.9 0.01 260)",
-            },
-          }}
-        />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers>
+          {children}
+          <Toaster theme="dark" />
+        </Providers>
       </body>
     </html>
   );
