@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Syne, JetBrains_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const syne = Syne({
+const dmSans = DM_Sans({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${syne.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${dmSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {/* Aurora background blobs */}
         <div className="aurora-bg">
           <div className="aurora-blob" />

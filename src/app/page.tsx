@@ -19,10 +19,10 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-[52px] md:text-[64px] font-extrabold leading-[1.05] tracking-[-0.035em] text-white mb-5">
+          <h1 className="text-[48px] md:text-[60px] font-extrabold leading-[1.08] tracking-[-0.03em] text-white mb-5">
             Generate 3D Models
             <br />
-            from <em className="not-italic gradient-text">Text & Images</em>
+            from <span className="gradient-text">Text & Images</span>
           </h1>
 
           {/* Subtitle */}
