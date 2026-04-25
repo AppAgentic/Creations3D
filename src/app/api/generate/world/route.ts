@@ -23,17 +23,18 @@ export async function POST(request: NextRequest) {
     if (contentType.includes("application/json")) {
       // JSON body
       const body = await request.json();
-      type = body.type;
+      type = body.type === "image" ? "image" : "text";
       prompt = body.prompt;
       imageUrl = body.imageUrl;
-      model = body.model || "plus";
+      model = body.model === "mini" ? "mini" : "plus";
       displayName = body.displayName;
     } else if (contentType.includes("multipart/form-data")) {
       // FormData with image file
       const formData = await request.formData();
-      type = (formData.get("type") as string) || "image";
+      const formType = formData.get("type");
+      type = formType === "text" ? "text" : "image";
       prompt = formData.get("prompt") as string | undefined;
-      model = (formData.get("model") as "mini" | "plus") || "plus";
+      model = formData.get("model") === "mini" ? "mini" : "plus";
       displayName = formData.get("displayName") as string | undefined;
 
       const imageFile = formData.get("image") as File | null;

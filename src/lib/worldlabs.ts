@@ -225,12 +225,14 @@ export async function uploadMedia(
   file: Buffer | Uint8Array,
   contentType: string
 ): Promise<void> {
+  const uploadBody = new Blob([new Uint8Array(file)], { type: contentType });
+
   const response = await fetch(uploadUrl, {
     method: "PUT",
     headers: {
       "Content-Type": contentType,
     },
-    body: file,
+    body: uploadBody,
   });
 
   if (!response.ok) {

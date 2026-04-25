@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState, useEffect } from "react";
+import { Suspense, useRef, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -136,36 +136,30 @@ interface ModelViewerProps {
 }
 
 export function ModelViewer({ modelUrl, className = "" }: ModelViewerProps) {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (modelUrl) {
-      setIsLoading(true);
-    }
-  }, [modelUrl]);
-
   return (
     <div className={`relative w-full h-full min-h-[300px] ${className}`}>
       <Canvas
         shadows
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
-        className="rounded-lg"
+        className="rounded-none"
       >
-        <color attach="background" args={["#f5f5f5"]} />
+        <color attach="background" args={["#080a08"]} />
         <Scene modelUrl={modelUrl} />
       </Canvas>
 
       {/* Overlay when no model */}
       {!modelUrl && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg pointer-events-none">
-          <p className="text-muted-foreground">Your 3D model will appear here</p>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#080a08]/70">
+          <p className="font-mono text-xs uppercase tracking-[0.22em] text-white/40">
+            Your 3D model will appear here
+          </p>
         </div>
       )}
 
       {/* Controls hint */}
       {modelUrl && (
-        <div className="absolute bottom-2 left-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+        <div className="absolute bottom-3 left-3 border border-white/10 bg-black/45 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-white/55 backdrop-blur">
           Drag to rotate • Scroll to zoom • Shift+drag to pan
         </div>
       )}

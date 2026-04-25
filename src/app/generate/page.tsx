@@ -2,39 +2,47 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import NextImage from "next/image";
+import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
+import { StudioScene } from "@/components/StudioScene";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Type,
-  Image as ImageIcon,
-  Upload,
-  Sparkles,
-  Download,
-  RotateCcw,
-  Loader2,
-  Save,
-  Check,
-  Globe,
-} from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { WorldViewer, WorldAssets } from "@/components/WorldViewer";
 import { toast } from "sonner";
+import {
+  Box,
+  Check,
+  CreditCard,
+  Download,
+  FileArchive,
+  Gauge,
+  Globe,
+  Image as ImageIcon,
+  Layers3,
+  Loader2,
+  PanelLeft,
+  RotateCcw,
+  Save,
+  Settings2,
+  Sparkles,
+  Type,
+  Upload,
+} from "lucide-react";
 
-// Dynamically import ModelViewer to avoid SSR issues with Three.js
 const ModelViewer = dynamic(
   () => import("@/components/ModelViewer").then((mod) => mod.ModelViewer),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-full w-full items-center justify-center bg-[#080a08]">
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     ),
   }
@@ -53,50 +61,51 @@ export default function GeneratePage() {
   const [isSaved, setIsSaved] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
 
-  // World generation state
   const [worldId, setWorldId] = useState<string | null>(null);
   const [worldAssets, setWorldAssets] = useState<WorldAssets | null>(null);
   const [worldModel, setWorldModel] = useState<"mini" | "plus">("plus");
-  const [worldInputType, setWorldInputType] = useState<"text" | "image">("text");
+  const [worldInputType, setWorldInputType] = useState<"text" | "image">(
+    "text"
+  );
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleGenerate = async () => {
-    // Handle world generation separately
     if (mode === "world") {
       await handleGenerateWorld();
       return;
     }
 
     if (mode === "text" && !prompt.trim()) {
-      toast.error("Please enter a prompt");
+      toast.error("Enter a prompt");
       return;
     }
+
     if (mode === "image" && !imageFile) {
-      toast.error("Please upload an image");
+      toast.error("Upload an image");
       return;
     }
 
@@ -104,11 +113,10 @@ export default function GeneratePage() {
     setProgress(0);
     setModelUrl(null);
 
-    // Progress simulation (actual generation takes 30-60 seconds)
     const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 5;
+      setProgress((current) => {
+        if (current >= 90) return current;
+        return current + Math.random() * 5;
       });
     }, 1000);
 
@@ -116,14 +124,12 @@ export default function GeneratePage() {
       let response: Response;
 
       if (mode === "text") {
-        // Text to 3D API call
         response = await fetch("/api/generate/text-to-3d", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt }),
         });
       } else {
-        // Image to 3D API call
         const formData = new FormData();
         formData.append("image", imageFile!);
 
@@ -134,16 +140,16 @@ export default function GeneratePage() {
       }
 
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate model");
       }
 
       setProgress(100);
       setModelUrl(data.modelUrl);
-      toast.success("3D model generated successfully!");
+      toast.success("3D model generated");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to generate model";
+      const message =
+        error instanceof Error ? error.message : "Failed to generate model";
       toast.error(message);
       console.error("Generation error:", error);
     } finally {
@@ -154,11 +160,12 @@ export default function GeneratePage() {
 
   const handleGenerateWorld = async () => {
     if (worldInputType === "text" && !prompt.trim()) {
-      toast.error("Please enter a prompt");
+      toast.error("Enter a prompt");
       return;
     }
+
     if (worldInputType === "image" && !imageFile) {
-      toast.error("Please upload an image");
+      toast.error("Upload an image");
       return;
     }
 
@@ -167,13 +174,11 @@ export default function GeneratePage() {
     setWorldId(null);
     setWorldAssets(null);
 
-    // Progress simulation - world generation takes longer
     const maxTime = worldModel === "mini" ? 60000 : 300000;
     const startTime = Date.now();
     const progressInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const estimatedProgress = Math.min(90, (elapsed / maxTime) * 100);
-      setProgress(estimatedProgress);
+      setProgress(Math.min(90, (elapsed / maxTime) * 100));
     }, 1000);
 
     try {
@@ -202,7 +207,6 @@ export default function GeneratePage() {
       }
 
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate world");
       }
@@ -210,9 +214,10 @@ export default function GeneratePage() {
       setProgress(100);
       setWorldId(data.worldId);
       setWorldAssets(data.assets);
-      toast.success(`3D world generated! (${data.creditCost} credits used)`);
+      toast.success(`3D world generated (${data.creditCost} credits used)`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to generate world";
+      const message =
+        error instanceof Error ? error.message : "Failed to generate world";
       toast.error(message);
       console.error("World generation error:", error);
     } finally {
@@ -237,16 +242,16 @@ export default function GeneratePage() {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || "Failed to save model");
       }
 
       setSavedUrl(data.savedUrl);
       setIsSaved(true);
-      toast.success("Model saved to your library!");
+      toast.success("Model saved to library");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save model";
+      const message =
+        error instanceof Error ? error.message : "Failed to save model";
       toast.error(message);
       console.error("Save error:", error);
     } finally {
@@ -262,417 +267,507 @@ export default function GeneratePage() {
     setProgress(0);
     setIsSaved(false);
     setSavedUrl(null);
-    // Reset world state
     setWorldId(null);
     setWorldAssets(null);
   };
 
+  const progressLabel = `${Math.round(progress)}%`;
+  const activeModeLabel =
+    mode === "world" ? "3D world" : mode === "image" ? "image mesh" : "text mesh";
+
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="studio-shell min-h-screen text-white">
       <Navbar />
 
-      <main className="pt-24 pb-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Generate 3D Model</h1>
-            <p className="text-muted-foreground">
-              Create stunning 3D models from text or images
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Input Panel */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Input</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs
-                  value={mode}
-                  onValueChange={(v) => setMode(v as "text" | "image" | "world")}
+      <main className="min-h-screen pt-16">
+        <div className="grid min-h-[calc(100svh-4rem)] lg:grid-cols-[4.5rem_minmax(0,1fr)_25rem]">
+          <aside className="hidden border-r border-white/10 bg-black/20 lg:flex lg:flex-col lg:items-center lg:justify-between lg:py-5">
+            <div className="flex flex-col gap-3">
+              {[PanelLeft, Box, Layers3, Settings2].map((Icon, index) => (
+                <button
+                  key={index}
+                  className={`flex size-10 items-center justify-center border text-white/55 transition-colors hover:text-white ${
+                    index === 1
+                      ? "border-primary/60 bg-primary/10 text-primary"
+                      : "border-white/10 bg-white/[0.03]"
+                  }`}
+                  aria-label={`Workspace control ${index + 1}`}
                 >
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="text" className="flex items-center gap-2">
-                      <Type className="h-4 w-4" />
-                      Text to 3D
-                    </TabsTrigger>
-                    <TabsTrigger value="image" className="flex items-center gap-2">
-                      <ImageIcon className="h-4 w-4" />
-                      Image to 3D
-                    </TabsTrigger>
-                    <TabsTrigger value="world" className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      3D World
-                    </TabsTrigger>
-                  </TabsList>
+                  <Icon className="size-4" />
+                </button>
+              ))}
+            </div>
+            <Link
+              href="/pricing"
+              className="flex size-10 items-center justify-center border border-white/10 bg-white/[0.03] text-white/55 transition-colors hover:text-white"
+              aria-label="Credits and pricing"
+            >
+              <CreditCard className="size-4" />
+            </Link>
+          </aside>
 
-                  <TabsContent value="text" className="mt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="prompt">Describe your 3D model</Label>
-                        <Textarea
-                          id="prompt"
-                          placeholder="A cute low-poly cat sitting on a cushion..."
-                          value={prompt}
-                          onChange={(e) => setPrompt(e.target.value)}
-                          className="mt-2 min-h-32"
+          <section className="relative min-h-[56rem] overflow-hidden border-b border-white/10 bg-[#080a08] lg:min-h-0 lg:border-b-0 lg:border-r">
+            <div className="absolute inset-0 studio-grid opacity-50" />
+            <div className="absolute inset-x-0 top-0 z-20 flex flex-col gap-4 border-b border-white/10 bg-[#080a08]/78 px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between lg:px-6">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                  New generation
+                </p>
+                <h1 className="mt-1 font-display text-3xl font-black">
+                  {activeModeLabel}
+                </h1>
+              </div>
+              <div className="flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-white/56">
+                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
+                  Credits 47
+                </span>
+                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
+                  GLB
+                </span>
+                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
+                  USDZ
+                </span>
+                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
+                  OBJ
+                </span>
+              </div>
+            </div>
+
+            <div className="relative z-10 h-full pt-32">
+              {mode === "world" ? (
+                <div className="h-[calc(100%-8rem)] p-4 lg:p-6">
+                  {isGenerating ? (
+                    <div className="flex h-full min-h-[34rem] items-center justify-center bg-[#080a08]">
+                      <div className="text-center">
+                        <Skeleton className="mx-auto h-40 w-40 rounded-none bg-white/10" />
+                        <p className="mt-6 font-mono text-xs uppercase tracking-[0.22em] text-white/45">
+                          Building 3D world
+                        </p>
+                      </div>
+                    </div>
+                  ) : worldId ? (
+                    <WorldViewer
+                      worldId={worldId}
+                      assets={worldAssets || undefined}
+                      className="h-full"
+                    />
+                  ) : (
+                    <StudioScene
+                      className="h-full min-h-[34rem]"
+                      interactive
+                      label="Empty 3D world preview"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="h-[calc(100%-8rem)] p-4 lg:p-6">
+                  {isGenerating ? (
+                    <div className="relative h-full min-h-[34rem] overflow-hidden bg-[#080a08]">
+                      <StudioScene className="absolute inset-0" compact />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="border border-white/10 bg-black/55 px-5 py-4 backdrop-blur">
+                          <p className="font-mono text-xs uppercase tracking-[0.22em] text-primary">
+                            Generating mesh
+                          </p>
+                          <p className="mt-2 text-sm text-white/55">
+                            {progressLabel} complete
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : modelUrl ? (
+                    <div className="h-full min-h-[34rem] overflow-hidden border border-white/10">
+                      <ModelViewer modelUrl={modelUrl} />
+                    </div>
+                  ) : (
+                    <StudioScene
+                      className="h-full min-h-[34rem]"
+                      interactive
+                      label="Empty 3D model preview"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="absolute inset-x-4 bottom-4 z-30 grid gap-px border border-white/10 bg-white/10 sm:grid-cols-4 lg:inset-x-6">
+              {[
+                ["Mesh quality", mode === "world" ? worldModel : "high"],
+                ["Polycount", modelUrl ? "ready" : "target 12k"],
+                ["Materials", imagePreview ? "reference" : "procedural"],
+                ["Texture bake", modelUrl || worldId ? "available" : "queued"],
+              ].map(([label, value]) => (
+                <div key={label} className="bg-[#0c0f0c]/92 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">
+                    {label}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-white">{value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <aside className="border-l border-white/10 bg-[#0b0e0b] p-4 lg:p-5">
+            <Tabs
+              value={mode}
+              onValueChange={(value) =>
+                setMode(value as "text" | "image" | "world")
+              }
+              className="gap-5"
+            >
+              <TabsList className="grid h-auto w-full grid-cols-3 rounded-none bg-white/[0.04] p-1">
+                <TabsTrigger
+                  value="text"
+                  className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Type className="size-4" />
+                  Text
+                </TabsTrigger>
+                <TabsTrigger
+                  value="image"
+                  className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <ImageIcon className="size-4" />
+                  Image
+                </TabsTrigger>
+                <TabsTrigger
+                  value="world"
+                  className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Globe className="size-4" />
+                  World
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="text" className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="prompt">Prompt</Label>
+                  <Textarea
+                    id="prompt"
+                    placeholder="A compact sci-fi helmet with graphite shell, white ceramic faceplate, lime status lights..."
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    className="min-h-40 rounded-none border-white/10 bg-black/20 text-white placeholder:text-white/28"
+                    disabled={isGenerating}
+                  />
+                  <p className="text-sm leading-6 text-white/45">
+                    Include material, scale, silhouette, and target use for a
+                    cleaner first pass.
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="image" className="space-y-5">
+                <ImageDropzone
+                  imagePreview={imagePreview}
+                  isGenerating={isGenerating}
+                  onDrop={handleDrop}
+                  onUpload={handleImageUpload}
+                  onRemove={() => {
+                    setImageFile(null);
+                    setImagePreview(null);
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="world" className="space-y-6">
+                <div className="space-y-3">
+                  <Label>Quality</Label>
+                  <RadioGroup
+                    value={worldModel}
+                    onValueChange={(value) =>
+                      setWorldModel(value as "mini" | "plus")
+                    }
+                    className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
+                  >
+                    {[
+                      ["mini", "Draft", "30-45s", "3 credits"],
+                      ["plus", "High", "~5 min", "5 credits"],
+                    ].map(([value, name, time, cost]) => (
+                      <div key={value} className="relative bg-[#0c0f0c]">
+                        <RadioGroupItem
+                          value={value}
+                          id={value}
+                          className="peer sr-only"
                           disabled={isGenerating}
                         />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Be specific about style, colors, and details for better
-                        results.
-                      </p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="image" className="mt-6">
-                    <div className="space-y-4">
-                      <Label>Upload an image</Label>
-                      <div
-                        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                          imagePreview
-                            ? "border-primary"
-                            : "border-muted-foreground/25 hover:border-primary/50"
-                        }`}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={handleDrop}
-                      >
-                        {imagePreview ? (
-                          <div className="space-y-4">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              className="max-h-48 mx-auto rounded-lg"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setImageFile(null);
-                                setImagePreview(null);
-                              }}
-                              disabled={isGenerating}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
-                            <div>
-                              <p className="text-muted-foreground mb-2">
-                                Drag and drop an image, or
-                              </p>
-                              <Button
-                                variant="outline"
-                                asChild
-                                disabled={isGenerating}
-                              >
-                                <label className="cursor-pointer">
-                                  Browse files
-                                  <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    disabled={isGenerating}
-                                  />
-                                </label>
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="world" className="mt-6">
-                    <div className="space-y-6">
-                      {/* Model Quality Selector */}
-                      <div className="space-y-3">
-                        <Label>Quality</Label>
-                        <RadioGroup
-                          value={worldModel}
-                          onValueChange={(v) => setWorldModel(v as "mini" | "plus")}
-                          className="grid grid-cols-2 gap-4"
+                        <Label
+                          htmlFor={value}
+                          className="block cursor-pointer p-4 transition-colors peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
                         >
-                          <div className="relative">
-                            <RadioGroupItem
-                              value="mini"
-                              id="mini"
-                              className="peer sr-only"
-                              disabled={isGenerating}
-                            />
-                            <Label
-                              htmlFor="mini"
-                              className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                            >
-                              <span className="font-semibold">Draft</span>
-                              <span className="text-sm text-muted-foreground">
-                                30-45 seconds
-                              </span>
-                              <span className="text-xs text-muted-foreground mt-1">
-                                3 credits
-                              </span>
-                            </Label>
-                          </div>
-                          <div className="relative">
-                            <RadioGroupItem
-                              value="plus"
-                              id="plus"
-                              className="peer sr-only"
-                              disabled={isGenerating}
-                            />
-                            <Label
-                              htmlFor="plus"
-                              className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                            >
-                              <span className="font-semibold">High Quality</span>
-                              <span className="text-sm text-muted-foreground">
-                                ~5 minutes
-                              </span>
-                              <span className="text-xs text-muted-foreground mt-1">
-                                5 credits
-                              </span>
-                            </Label>
-                          </div>
-                        </RadioGroup>
+                          <span className="block font-medium">{name}</span>
+                          <span className="mt-1 block text-xs opacity-70">
+                            {time} / {cost}
+                          </span>
+                        </Label>
                       </div>
-
-                      {/* Input Type Selector */}
-                      <div className="space-y-3">
-                        <Label>Input Type</Label>
-                        <RadioGroup
-                          value={worldInputType}
-                          onValueChange={(v) => setWorldInputType(v as "text" | "image")}
-                          className="flex gap-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="text" id="world-text" disabled={isGenerating} />
-                            <Label htmlFor="world-text" className="cursor-pointer">
-                              Text prompt
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="image" id="world-image" disabled={isGenerating} />
-                            <Label htmlFor="world-image" className="cursor-pointer">
-                              Image
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-
-                      {/* Input based on type */}
-                      {worldInputType === "text" ? (
-                        <div className="space-y-2">
-                          <Label htmlFor="world-prompt">Describe your 3D world</Label>
-                          <Textarea
-                            id="world-prompt"
-                            placeholder="A cozy coffee shop with warm lighting, wooden furniture, and plants by the window..."
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            className="min-h-32"
-                            disabled={isGenerating}
-                          />
-                          <p className="text-sm text-muted-foreground">
-                            Describe the environment, lighting, and atmosphere.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Label>Upload a reference image</Label>
-                          <div
-                            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                              imagePreview
-                                ? "border-primary"
-                                : "border-muted-foreground/25 hover:border-primary/50"
-                            }`}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={handleDrop}
-                          >
-                            {imagePreview ? (
-                              <div className="space-y-3">
-                                <img
-                                  src={imagePreview}
-                                  alt="Preview"
-                                  className="max-h-32 mx-auto rounded-lg"
-                                />
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setImageFile(null);
-                                    setImagePreview(null);
-                                  }}
-                                  disabled={isGenerating}
-                                >
-                                  Remove
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-                                <Button variant="outline" size="sm" asChild disabled={isGenerating}>
-                                  <label className="cursor-pointer">
-                                    Browse files
-                                    <input
-                                      type="file"
-                                      className="hidden"
-                                      accept="image/*"
-                                      onChange={handleImageUpload}
-                                      disabled={isGenerating}
-                                    />
-                                  </label>
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-
-                <div className="flex gap-4 mt-6">
-                  <Button
-                    className="flex-1"
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {mode === "world" ? "Generating World..." : "Generating..."}
-                      </>
-                    ) : (
-                      <>
-                        {mode === "world" ? (
-                          <Globe className="mr-2 h-4 w-4" />
-                        ) : (
-                          <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        {mode === "world"
-                          ? `Generate 3D World (${worldModel === "mini" ? "3" : "5"} credits)`
-                          : "Generate 3D Model"}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    disabled={isGenerating}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
+                    ))}
+                  </RadioGroup>
                 </div>
 
-                {isGenerating && (
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Generating...</span>
-                      <span>{progress}%</span>
-                    </div>
-                    <Progress value={progress} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Preview Panel */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {mode === "world" ? "3D World Preview" : "3D Preview"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {mode === "world" ? (
-                  // World Viewer for 3D World mode
-                  <div className="space-y-4">
-                    {isGenerating ? (
-                      <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                        <div className="text-center space-y-4">
-                          <Skeleton className="h-32 w-32 mx-auto rounded-lg" />
-                          <p className="text-muted-foreground">
-                            Creating your 3D world...
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {worldModel === "mini" ? "~30-45 seconds" : "~5 minutes"}
-                          </p>
-                        </div>
+                <div className="space-y-3">
+                  <Label>Input type</Label>
+                  <RadioGroup
+                    value={worldInputType}
+                    onValueChange={(value) =>
+                      setWorldInputType(value as "text" | "image")
+                    }
+                    className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
+                  >
+                    {[
+                      ["text", "Text prompt"],
+                      ["image", "Reference image"],
+                    ].map(([value, label]) => (
+                      <div key={value} className="relative bg-[#0c0f0c]">
+                        <RadioGroupItem
+                          value={value}
+                          id={`world-${value}`}
+                          className="peer sr-only"
+                          disabled={isGenerating}
+                        />
+                        <Label
+                          htmlFor={`world-${value}`}
+                          className="block cursor-pointer p-4 text-sm transition-colors peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                        >
+                          {label}
+                        </Label>
                       </div>
-                    ) : (
-                      <WorldViewer
-                        worldId={worldId}
-                        assets={worldAssets || undefined}
-                        className="aspect-video"
-                      />
-                    )}
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {worldInputType === "text" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="world-prompt">World prompt</Label>
+                    <Textarea
+                      id="world-prompt"
+                      placeholder="A compact product studio with concrete floors, inspection tables, and soft overhead lighting..."
+                      value={prompt}
+                      onChange={(event) => setPrompt(event.target.value)}
+                      className="min-h-36 rounded-none border-white/10 bg-black/20 text-white placeholder:text-white/28"
+                      disabled={isGenerating}
+                    />
                   </div>
                 ) : (
-                  // Model Viewer for Text/Image to 3D modes
-                  <>
-                    <div className="aspect-square rounded-lg overflow-hidden">
-                      {isGenerating ? (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <div className="text-center space-y-4">
-                            <Skeleton className="h-32 w-32 mx-auto rounded-lg" />
-                            <p className="text-muted-foreground">
-                              Creating your 3D model...
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <ModelViewer modelUrl={modelUrl} />
-                      )}
-                    </div>
+                  <ImageDropzone
+                    imagePreview={imagePreview}
+                    isGenerating={isGenerating}
+                    onDrop={handleDrop}
+                    onUpload={handleImageUpload}
+                    onRemove={() => {
+                      setImageFile(null);
+                      setImagePreview(null);
+                    }}
+                    compact
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
 
-                    {modelUrl && (
-                      <div className="mt-4 space-y-3">
-                        <Button
-                          className="w-full"
-                          onClick={handleSaveToLibrary}
-                          disabled={isSaving || isSaved}
-                        >
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Saving...
-                            </>
-                          ) : isSaved ? (
-                            <>
-                              <Check className="mr-2 h-4 w-4" />
-                              Saved to Library
-                            </>
-                          ) : (
-                            <>
-                              <Save className="mr-2 h-4 w-4" />
-                              Save to Library
-                            </>
-                          )}
-                        </Button>
-                        <div className="flex gap-2">
-                          <Button className="flex-1" variant="outline" asChild>
-                            <a href={savedUrl || modelUrl} download="model.glb">
-                              <Download className="mr-2 h-4 w-4" />
-                              Download GLB
-                            </a>
-                          </Button>
-                          <Button className="flex-1" variant="outline" disabled>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download OBJ
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+            <div className="mt-6 space-y-3">
+              <Button
+                className="h-12 w-full rounded-none"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Generating
+                  </>
+                ) : mode === "world" ? (
+                  <>
+                    <Globe className="size-4" />
+                    Generate 3D world ({worldModel === "mini" ? "3" : "5"} credits)
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-4" />
+                    Generate 3D model
                   </>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 w-full rounded-none border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.07] hover:text-white"
+                onClick={handleReset}
+                disabled={isGenerating}
+              >
+                <RotateCcw className="size-4" />
+                Reset
+              </Button>
+            </div>
+
+            {isGenerating && (
+              <div className="mt-6 space-y-3 border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex justify-between font-mono text-xs uppercase tracking-[0.18em] text-white/55">
+                  <span>Generating</span>
+                  <span>{progressLabel}</span>
+                </div>
+                <Progress value={progress} />
+              </div>
+            )}
+
+            {(modelUrl || worldId) && (
+              <div className="mt-6 space-y-3 border border-white/10 bg-white/[0.03] p-4">
+                <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                  Export
+                </p>
+                {modelUrl && (
+                  <>
+                    <Button
+                      className="h-11 w-full rounded-none"
+                      onClick={handleSaveToLibrary}
+                      disabled={isSaving || isSaved}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Saving
+                        </>
+                      ) : isSaved ? (
+                        <>
+                          <Check className="size-4" />
+                          Saved to library
+                        </>
+                      ) : (
+                        <>
+                          <Save className="size-4" />
+                          Save to library
+                        </>
+                      )}
+                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.07] hover:text-white"
+                        asChild
+                      >
+                        <a href={savedUrl || modelUrl} download="model.glb">
+                          <Download className="size-4" />
+                          GLB
+                        </a>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-white/10 bg-white/[0.03] text-white"
+                        disabled
+                      >
+                        <FileArchive className="size-4" />
+                        OBJ
+                      </Button>
+                    </div>
+                  </>
+                )}
+                {worldId && (
+                  <p className="text-sm leading-6 text-white/55">
+                    World assets are available in the viewport action row.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="mt-6 grid grid-cols-2 gap-px border border-white/10 bg-white/10">
+              {[
+                {
+                  icon: Gauge,
+                  label: "Quality",
+                  value: mode === "world" ? worldModel : "High",
+                },
+                { icon: Layers3, label: "Target", value: "Game/web" },
+              ].map(({ icon: MetricIcon, label, value }) => {
+                return (
+                  <div key={label} className="bg-[#0c0f0c] p-4">
+                    <MetricIcon className="mb-5 size-4 text-primary" />
+                    <p className="text-sm font-medium text-white">{value}</p>
+                    <p className="mt-1 text-xs text-white/42">{label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
         </div>
       </main>
+    </div>
+  );
+}
+
+function ImageDropzone({
+  imagePreview,
+  isGenerating,
+  onDrop,
+  onUpload,
+  onRemove,
+  compact = false,
+}: {
+  imagePreview: string | null;
+  isGenerating: boolean;
+  onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+  onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <Label>Reference image</Label>
+      <div
+        className={`border border-dashed border-white/16 bg-black/20 p-4 text-center transition-colors hover:border-primary/70 ${
+          compact ? "min-h-44" : "min-h-64"
+        }`}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={onDrop}
+      >
+        {imagePreview ? (
+          <div className="space-y-4">
+            <NextImage
+              src={imagePreview}
+              alt="Uploaded reference preview"
+              width={640}
+              height={360}
+              unoptimized
+              className={`mx-auto w-full object-cover ${
+                compact ? "max-h-32" : "max-h-52"
+              }`}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRemove}
+              disabled={isGenerating}
+              className="rounded-none border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.07] hover:text-white"
+            >
+              Remove
+            </Button>
+          </div>
+        ) : (
+          <div className="flex min-h-52 flex-col items-center justify-center gap-4">
+            <Upload className="size-9 text-white/35" />
+            <div>
+              <p className="text-sm text-white/56">Drop an image here</p>
+              <p className="mt-1 text-xs text-white/35">
+                Use clear silhouettes for stronger mesh results.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              asChild
+              disabled={isGenerating}
+              className="rounded-none border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.07] hover:text-white"
+            >
+              <label className="cursor-pointer">
+                Browse files
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={onUpload}
+                  disabled={isGenerating}
+                />
+              </label>
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

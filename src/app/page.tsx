@@ -1,147 +1,233 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
+import { StudioScene } from "@/components/StudioScene";
+import { Button } from "@/components/ui/button";
 import {
-  Cuboid,
-  Image,
-  Type,
-  Download,
-  Zap,
-  Sparkles,
   ArrowRight,
+  Box,
+  Download,
+  FileImage,
+  Gauge,
+  Layers3,
+  ScanLine,
+  Type,
 } from "lucide-react";
+
+const workflow = [
+  {
+    label: "Text to mesh",
+    detail: "Describe the asset, choose quality, and generate a first pass.",
+    icon: Type,
+  },
+  {
+    label: "Image to mesh",
+    detail: "Upload a reference and convert shape, silhouette, and material cues.",
+    icon: FileImage,
+  },
+  {
+    label: "Export GLB",
+    detail: "Save production-ready models for web, game engines, and pipelines.",
+    icon: Download,
+  },
+];
+
+const assets = [
+  "chair",
+  "helmet",
+  "lamp",
+  "drone shell",
+  "sneaker sole",
+  "game crate",
+];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
+    <div className="studio-shell min-h-screen overflow-hidden text-white">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
-            AI-Powered 3D Generation
+      <main>
+        <section className="relative min-h-[100svh] overflow-hidden pt-16">
+          <div className="absolute inset-0 studio-grid opacity-55" />
+          <StudioScene className="absolute right-0 top-20 h-[68svh] min-h-[34rem] w-[92vw] md:w-[68vw]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,#080a08_0%,rgba(8,10,8,0.94)_32%,rgba(8,10,8,0.42)_65%,rgba(8,10,8,0.08)_100%)]" />
+
+          <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-[1500px] flex-col justify-between px-4 py-10 sm:px-6 lg:px-8">
+            <div className="max-w-3xl pt-12 sm:pt-20">
+              <p className="mb-5 inline-flex items-center gap-2 border border-white/12 bg-white/[0.04] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                <ScanLine className="size-3.5" />
+                Text and image to 3D
+              </p>
+              <h1 className="font-display text-6xl font-black leading-[0.9] tracking-normal text-balance sm:text-7xl lg:text-8xl">
+                Creations3D
+              </h1>
+              <p className="mt-6 max-w-xl text-xl leading-8 text-white/72 sm:text-2xl">
+                Generate 3D models from prompts, references, and rough product
+                ideas. Review the mesh, refine materials, then export to your
+                pipeline.
+              </p>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Button size="lg" asChild className="h-12 rounded-none px-6">
+                  <Link href="/generate">
+                    Start creating
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                  className="h-12 rounded-none border-white/14 bg-white/[0.03] px-6 text-white hover:bg-white/[0.08] hover:text-white"
+                >
+                  <Link href="/dashboard">View examples</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+              {workflow.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.label}
+                    href="/generate"
+                    className="group bg-[#0c0f0c]/88 p-5 transition-colors hover:bg-[#111710]"
+                  >
+                    <div className="mb-5 flex items-center justify-between">
+                      <Icon className="size-5 text-primary" />
+                      <ArrowRight className="size-4 text-white/25 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                    </div>
+                    <h2 className="font-display text-2xl font-black">
+                      {item.label}
+                    </h2>
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-white/55">
+                      {item.detail}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
+        </section>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-            Create 3D Models
-            <br />
-            <span className="text-primary">In Seconds</span>
-          </h1>
+        <section className="border-y border-white/10 bg-[#0b0e0b] px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-[1500px] gap-12 lg:grid-cols-[0.78fr_1.22fr]">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
+                Output gallery
+              </p>
+              <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
+                A library that looks like the work, not a file dump.
+              </h2>
+              <p className="mt-6 max-w-lg text-lg leading-8 text-white/60">
+                Generated models land with status, format, prompt lineage, and
+                export controls visible from the first scan.
+              </p>
+            </div>
 
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Transform your ideas into stunning 3D models using AI. Simply
-            describe what you want or upload an image, and watch the magic
-            happen.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/generate">
-                Start Creating <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/pricing">View Pricing</Link>
-            </Button>
+            <div className="grid grid-cols-2 gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+              {assets.map((asset, index) => (
+                <div
+                  key={asset}
+                  className={`min-h-44 bg-[#111510] p-4 ${
+                    index === 1 ? "md:row-span-2" : ""
+                  }`}
+                >
+                  <div className="flex h-full flex-col justify-between">
+                    <div className="relative min-h-28 overflow-hidden bg-[#080a08]">
+                      <div className="absolute inset-0 studio-grid opacity-40" />
+                      <div className="absolute left-1/2 top-1/2 size-16 -translate-x-1/2 -translate-y-1/2 rotate-12 border border-primary/65 bg-white/[0.04] shadow-[0_0_40px_rgba(201,255,56,0.08)]" />
+                      <div className="absolute left-1/2 top-1/2 size-10 -translate-x-[25%] -translate-y-[30%] border border-white/25 bg-white/[0.08]" />
+                    </div>
+                    <div className="mt-4 flex items-center justify-between gap-4">
+                      <p className="font-mono text-xs uppercase tracking-[0.16em] text-white/72">
+                        {asset}
+                      </p>
+                      <span className="text-xs text-primary">Ready</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-muted/50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Powerful Features
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Type className="h-6 w-6 text-primary" />
+        <section className="px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="border border-white/10 bg-white/[0.03] p-4">
+              <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+                {[
+                  ["47.2s", "median model pass"],
+                  ["3", "export formats"],
+                  ["12k", "target poly preview"],
+                ].map(([value, label]) => (
+                  <div key={label} className="bg-[#0c0f0c] p-6">
+                    <p className="font-mono text-4xl text-white">{value}</p>
+                    <p className="mt-2 text-sm text-white/48">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-px border border-white/10 bg-white/10 md:grid-cols-2">
+                <div className="bg-[#0c0f0c] p-6">
+                  <Layers3 className="mb-12 size-6 text-primary" />
+                  <h3 className="font-display text-3xl font-black">
+                    Mesh review
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-white/55">
+                    Inspect topology, preview wireframe, and choose an export
+                    target before downloading.
+                  </p>
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Text to 3D</h3>
-                <p className="text-muted-foreground">
-                  Describe your vision in words and our AI will bring it to
-                  life as a detailed 3D model.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Image className="h-6 w-6 text-primary" />
+                <div className="bg-[#0c0f0c] p-6">
+                  <Gauge className="mb-12 size-6 text-primary" />
+                  <h3 className="font-display text-3xl font-black">
+                    Credit control
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-white/55">
+                    Keep cost, quality, and generation mode visible at the point
+                    of creation.
+                  </p>
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Image to 3D</h3>
-                <p className="text-muted-foreground">
-                  Upload any image and convert it into a fully textured 3D
-                  model in seconds.
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Download className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Multiple Formats</h3>
-                <p className="text-muted-foreground">
-                  Export your models in GLB, OBJ, or STL formats for use in any
-                  3D application.
+            <div className="flex flex-col justify-between border-l border-white/10 pl-8">
+              <div>
+                <Box className="mb-8 size-10 text-primary" />
+                <h2 className="font-display text-5xl font-black leading-none text-balance lg:text-6xl">
+                  Built around the workspace.
+                </h2>
+                <p className="mt-6 text-lg leading-8 text-white/62">
+                  The landing page, generator, library, and pricing all share
+                  one product language: a live 3D cockpit with the next action
+                  always visible.
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Lightning Fast</h3>
-                <p className="text-muted-foreground">
-                  Generate production-ready 3D models in under 30 seconds with
-                  our optimized AI pipeline.
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <Button asChild className="mt-10 h-12 w-fit rounded-none px-6">
+                <Link href="/generate">
+                  Open the cockpit
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <Cuboid className="h-16 w-16 text-primary mx-auto mb-6" />
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Create Your First 3D Model?
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            Join thousands of creators using Creations3D to bring their ideas
-            to life. Start with free credits today.
-          </p>
-          <Button size="lg" asChild>
-            <Link href="/generate">
-              Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+      <footer className="border-t border-white/10 px-4 py-8 text-sm text-white/45 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1500px] flex-col justify-between gap-4 md:flex-row">
+          <p>Creations3D</p>
+          <div className="flex gap-5">
+            <Link href="/pricing" className="hover:text-white">
+              Pricing
             </Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t py-8 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Cuboid className="h-6 w-6 text-primary" />
-            <span className="font-semibold">Creations3D</span>
+            <Link href="/generate" className="hover:text-white">
+              Generate
+            </Link>
+            <Link href="/dashboard" className="hover:text-white">
+              Assets
+            </Link>
           </div>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Creations3D. All rights reserved.
-          </p>
         </div>
       </footer>
     </div>

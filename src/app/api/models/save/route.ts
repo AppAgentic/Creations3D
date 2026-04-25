@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadModelFromUrl, generateFileKey, uploadFile } from "@/lib/r2";
+import { generateFileKey, uploadFile } from "@/lib/r2";
 
 export async function POST(request: NextRequest) {
   try {
