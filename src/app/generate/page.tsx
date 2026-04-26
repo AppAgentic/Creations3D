@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import NextImage from "next/image";
 import Link from "next/link";
@@ -49,7 +49,7 @@ const ModelViewer = dynamic(
 );
 
 export default function GeneratePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<"text" | "image" | "world">("text");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -60,6 +60,12 @@ export default function GeneratePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
+  const [generationId, setGenerationId] = useState<string | null>(null);
+  const [creditState, setCreditState] = useState<{
+    credits: number;
+    plan: string | null;
+    subscriptionStatus: string | null;
+  } | null>(null);
 
   const [worldId, setWorldId] = useState<string | null>(null);
   const [worldAssets, setWorldAssets] = useState<WorldAssets | null>(null);
@@ -67,6 +73,73 @@ export default function GeneratePage() {
   const [worldInputType, setWorldInputType] = useState<"text" | "image">(
     "text"
   );
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    let cancelled = false;
+
+    user
+      .getIdToken()
+      .then((token) =>
+        fetch("/api/user/credits", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      )
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelled) {
+          setCreditState(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load credits:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user]);
+
+  const reloadCredits = async () => {
+    if (!user) return;
+
+    const token = await user.getIdToken();
+    const response = await fetch("/api/user/credits", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      setCreditState(data);
+    }
+  };
+
+  const getGenerationCost = () => {
+    if (mode !== "world") return 1;
+    return worldModel === "mini" ? 3 : 5;
+  };
+
+  const ensureCanGenerate = async () => {
+    if (!user) {
+      await signInWithGoogle();
+      toast.success("Signed in. Choose a paid plan to add credits.");
+      return false;
+    }
+
+    const cost = getGenerationCost();
+
+    if (creditState && creditState.credits < cost) {
+      toast.error(`You need ${cost} credits to generate. Choose a plan first.`);
+      return false;
+    }
+
+    return true;
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -94,6 +167,8 @@ export default function GeneratePage() {
   };
 
   const handleGenerate = async () => {
+    if (!(await ensureCanGenerate())) return;
+
     if (mode === "world") {
       await handleGenerateWorld();
       return;
@@ -112,6 +187,9 @@ export default function GeneratePage() {
     setIsGenerating(true);
     setProgress(0);
     setModelUrl(null);
+    setGenerationId(null);
+    setIsSaved(false);
+    setSavedUrl(null);
 
     const progressInterval = setInterval(() => {
       setProgress((current) => {
@@ -122,11 +200,15 @@ export default function GeneratePage() {
 
     try {
       let response: Response;
+      const token = await user!.getIdToken();
 
       if (mode === "text") {
         response = await fetch("/api/generate/text-to-3d", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ prompt }),
         });
       } else {
@@ -135,6 +217,9 @@ export default function GeneratePage() {
 
         response = await fetch("/api/generate/image-to-3d", {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         });
       }
@@ -146,6 +231,16 @@ export default function GeneratePage() {
 
       setProgress(100);
       setModelUrl(data.modelUrl);
+      setGenerationId(data.generationId || null);
+      if (typeof data.remainingCredits === "number") {
+        setCreditState((current) => ({
+          credits: data.remainingCredits,
+          plan: current?.plan || null,
+          subscriptionStatus: current?.subscriptionStatus || null,
+        }));
+      } else {
+        await reloadCredits();
+      }
       toast.success("3D model generated");
     } catch (error) {
       const message =
@@ -173,6 +268,7 @@ export default function GeneratePage() {
     setProgress(0);
     setWorldId(null);
     setWorldAssets(null);
+    setGenerationId(null);
 
     const maxTime = worldModel === "mini" ? 60000 : 300000;
     const startTime = Date.now();
@@ -183,11 +279,15 @@ export default function GeneratePage() {
 
     try {
       let response: Response;
+      const token = await user!.getIdToken();
 
       if (worldInputType === "text") {
         response = await fetch("/api/generate/world", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             type: "text",
             prompt,
@@ -202,6 +302,9 @@ export default function GeneratePage() {
 
         response = await fetch("/api/generate/world", {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         });
       }
@@ -214,6 +317,16 @@ export default function GeneratePage() {
       setProgress(100);
       setWorldId(data.worldId);
       setWorldAssets(data.assets);
+      setGenerationId(data.generationId || null);
+      if (typeof data.remainingCredits === "number") {
+        setCreditState((current) => ({
+          credits: data.remainingCredits,
+          plan: current?.plan || null,
+          subscriptionStatus: current?.subscriptionStatus || null,
+        }));
+      } else {
+        await reloadCredits();
+      }
       toast.success(`3D world generated (${data.creditCost} credits used)`);
     } catch (error) {
       const message =
@@ -228,16 +341,24 @@ export default function GeneratePage() {
 
   const handleSaveToLibrary = async () => {
     if (!modelUrl) return;
+    if (!user) {
+      toast.error("Sign in to save models");
+      return;
+    }
 
     setIsSaving(true);
     try {
+      const token = await user.getIdToken();
       const response = await fetch("/api/models/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           modelUrl,
           format: "glb",
-          userId: user?.uid || "anonymous",
+          generationId,
         }),
       });
 
@@ -247,6 +368,7 @@ export default function GeneratePage() {
       }
 
       setSavedUrl(data.savedUrl);
+      setGenerationId(data.generationId || generationId);
       setIsSaved(true);
       toast.success("Model saved to library");
     } catch (error) {
@@ -267,6 +389,7 @@ export default function GeneratePage() {
     setProgress(0);
     setIsSaved(false);
     setSavedUrl(null);
+    setGenerationId(null);
     setWorldId(null);
     setWorldAssets(null);
   };
@@ -274,6 +397,11 @@ export default function GeneratePage() {
   const progressLabel = `${Math.round(progress)}%`;
   const activeModeLabel =
     mode === "world" ? "3D world" : mode === "image" ? "image mesh" : "text mesh";
+  const displayedCredits = authLoading
+    ? "..."
+    : user
+      ? creditState?.credits ?? "..."
+      : "--";
 
   return (
     <div className="studio-shell min-h-screen text-white">
@@ -319,7 +447,7 @@ export default function GeneratePage() {
               </div>
               <div className="flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-white/56">
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  Credits 47
+                  Credits {displayedCredits}
                 </span>
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
                   GLB
@@ -580,10 +708,15 @@ export default function GeneratePage() {
                     <Globe className="size-4" />
                     Generate 3D world ({worldModel === "mini" ? "3" : "5"} credits)
                   </>
+                ) : !user ? (
+                  <>
+                    <Sparkles className="size-4" />
+                    Sign in to generate
+                  </>
                 ) : (
                   <>
                     <Sparkles className="size-4" />
-                    Generate 3D model
+                    Generate 3D model (1 credit)
                   </>
                 )}
               </Button>

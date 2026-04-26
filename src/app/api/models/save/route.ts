@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
 import { generateFileKey, uploadFile } from "@/lib/r2";
+import { adminDb } from "@/lib/firebase-admin";
+import { updateGenerationRecord } from "@/lib/generation-records";
+import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireUser(request);
     const body = await request.json();
-    const { modelUrl, format = "glb", userId = "anonymous" } = body;
+    const { modelUrl, generationId } = body;
+    const format = body.format === "obj" ? "obj" : "glb";
 
     if (!modelUrl) {
       return NextResponse.json(
@@ -13,10 +19,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate a unique key for the model
-    const generationId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    let targetGenerationId = generationId as string | undefined;
 
-    // Download the model from the temporary URL and upload to R2
+    if (targetGenerationId) {
+      const generationDoc = await adminDb()
+        .collection("generations")
+        .doc(targetGenerationId)
+        .get();
+
+      if (
+        !generationDoc.exists ||
+        generationDoc.data()?.userId !== user.uid
+      ) {
+        return NextResponse.json(
+          { error: "Generation not found" },
+          { status: 404 }
+        );
+      }
+    } else {
+      const generationRef = adminDb().collection("generations").doc();
+      targetGenerationId = generationRef.id;
+      await generationRef.set({
+        userId: user.uid,
+        type: "text-to-3d",
+        provider: "replicate",
+        status: "generated",
+        modelUrl,
+        format,
+        creditsUsed: 0,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+
     const response = await fetch(modelUrl);
 
     if (!response.ok) {
@@ -28,23 +63,33 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await response.arrayBuffer());
     const contentType = format === "obj" ? "model/obj" : "model/gltf-binary";
-    const key = generateFileKey(userId, "model", format);
+    const key = generateFileKey(user.uid, "model", format);
 
     const result = await uploadFile(key, buffer, contentType);
+
+    await updateGenerationRecord(targetGenerationId, {
+      status: "saved",
+      savedKey: result.key,
+      savedUrl: result.url,
+      format,
+      savedAt: FieldValue.serverTimestamp(),
+    });
 
     return NextResponse.json({
       success: true,
       savedUrl: result.url,
       key: result.key,
-      generationId,
+      generationId: targetGenerationId,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     console.error("Save model error:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to save model: ${errorMessage}` },
+      { error: `Failed to save model: ${getErrorMessage(error)}` },
       { status: 500 }
     );
   }

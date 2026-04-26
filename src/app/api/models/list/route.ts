@@ -1,48 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedDownloadUrl } from "@/lib/r2";
+import { adminDb } from "@/lib/firebase-admin";
+import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
 
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-  },
-});
+type FirestoreTimestampLike = {
+  toDate?: () => Date;
+  seconds?: number;
+};
 
-const BUCKET_NAME = process.env.R2_BUCKET_NAME || "creations3d-models";
+function toIsoDate(value: unknown): string | null {
+  if (!value) return null;
+
+  const timestamp = value as FirestoreTimestampLike;
+
+  if (timestamp.toDate) {
+    return timestamp.toDate().toISOString();
+  }
+
+  if (timestamp.seconds) {
+    return new Date(timestamp.seconds * 1000).toISOString();
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireUser(request);
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId") || "anonymous";
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-    const command = new ListObjectsV2Command({
-      Bucket: BUCKET_NAME,
-      Prefix: `models/${userId}/`,
-      MaxKeys: limit,
-    });
-
-    const response = await r2Client.send(command);
+    const snapshot = await adminDb()
+      .collection("generations")
+      .where("userId", "==", user.uid)
+      .limit(Math.max(limit, 1))
+      .get();
 
     const models = await Promise.all(
-      (response.Contents || []).map(async (item) => {
-        const key = item.Key || "";
-        const url = await getSignedDownloadUrl(key);
+      snapshot.docs
+        .map((doc) => {
+          const data = doc.data() as Record<string, unknown>;
+          return {
+            id: doc.id,
+            ...data,
+          } as Record<string, unknown> & { id: string };
+        })
+        .filter((item) => {
+          return (
+            item.status !== "deleted" &&
+            item.type !== "world" &&
+            (item.savedKey || item.savedUrl || item.modelUrl)
+          );
+        })
+        .map(async (item) => {
+          const key = (item.savedKey as string | undefined) || "";
+          const url = key
+            ? await getSignedDownloadUrl(key)
+            : ((item.savedUrl || item.modelUrl) as string);
+          const createdAt = toIsoDate(item.createdAt);
+          const savedAt = toIsoDate(item.savedAt);
+          const completedAt = toIsoDate(item.completedAt);
 
-        return {
-          key,
-          url,
-          size: item.Size,
-          lastModified: item.LastModified,
-          format: key.endsWith(".obj") ? "obj" : "glb",
-        };
-      })
+          return {
+            generationId: item.id,
+            key: key || item.id,
+            url,
+            size: item.size || null,
+            lastModified: savedAt || completedAt || createdAt,
+            format: item.format || "glb",
+            status: item.status || "generated",
+            prompt: item.prompt || null,
+            type: item.type,
+            creditsUsed: item.creditsUsed || 0,
+          };
+        })
     );
 
-    // Sort by most recent first
     models.sort((a, b) => {
       const dateA = a.lastModified ? new Date(a.lastModified).getTime() : 0;
       const dateB = b.lastModified ? new Date(b.lastModified).getTime() : 0;
@@ -51,16 +88,18 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      models,
+      models: models.slice(0, limit),
       count: models.length,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     console.error("List models error:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to list models: ${errorMessage}` },
+      { error: `Failed to list models: ${getErrorMessage(error)}` },
       { status: 500 }
     );
   }

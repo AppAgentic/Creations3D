@@ -227,6 +227,15 @@ export default function HomePage() {
             <Link href="/dashboard" className="hover:text-white">
               Assets
             </Link>
+            <Link href="/support" className="hover:text-white">
+              Support
+            </Link>
+            <Link href="/privacy" className="hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-white">
+              Terms
+            </Link>
           </div>
         </div>
       </footer>

@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { textTo3D } from "@/lib/replicate";
+import {
+  InsufficientCreditsError,
+  refundCredits,
+  reserveCredits,
+} from "@/lib/credits";
+import {
+  createGenerationRecord,
+  markGenerationFailed,
+  updateGenerationRecord,
+} from "@/lib/generation-records";
+import { adminDb } from "@/lib/firebase-admin";
+import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
+import { FieldValue } from "firebase-admin/firestore";
+
+const CREDIT_COST = 1;
 
 export async function POST(request: NextRequest) {
+  let generationId: string | null = null;
+  let userId: string | null = null;
+  let creditsReserved = false;
+
   try {
+    const user = await requireUser(request);
+    userId = user.uid;
+
     const body = await request.json();
     const { prompt } = body;
 
@@ -20,25 +42,78 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate 3D model using Replicate
+    generationId = adminDb().collection("generations").doc().id;
+
+    const creditReservation = await reserveCredits({
+      userId,
+      amount: CREDIT_COST,
+      reason: "text-to-3d",
+      generationId,
+    });
+    creditsReserved = true;
+
+    await createGenerationRecord({
+      generationId,
+      userId,
+      type: "text-to-3d",
+      prompt,
+      provider: "replicate",
+      creditsUsed: CREDIT_COST,
+      input: { promptLength: prompt.length },
+    });
+
     const result = await textTo3D({ prompt });
 
     if (!result.modelUrl) {
-      return NextResponse.json(
-        { error: "Failed to generate model - no output received" },
-        { status: 500 }
-      );
+      throw new Error("Failed to generate model - no output received");
     }
+
+    await updateGenerationRecord(generationId, {
+      status: "generated",
+      modelUrl: result.modelUrl,
+      format: result.format,
+      completedAt: FieldValue.serverTimestamp(),
+    });
 
     return NextResponse.json({
       success: true,
+      generationId,
       modelUrl: result.modelUrl,
       format: result.format,
+      creditsUsed: CREDIT_COST,
+      remainingCredits: creditReservation.remainingCredits,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
+    if (error instanceof InsufficientCreditsError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          credits: error.currentCredits,
+          requiredCredits: error.requiredCredits,
+        },
+        { status: error.status }
+      );
+    }
+
+    const errorMessage = getErrorMessage(error);
     console.error("Text to 3D error:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    if (generationId) {
+      await markGenerationFailed(generationId, errorMessage);
+    }
+
+    if (creditsReserved && userId) {
+      await refundCredits({
+        userId,
+        amount: CREDIT_COST,
+        reason: "text-to-3d-failed",
+        generationId: generationId || undefined,
+      });
+    }
 
     return NextResponse.json(
       { error: `Failed to generate 3D model: ${errorMessage}` },

@@ -26,6 +26,7 @@ import {
   Loader2,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
 
 const ModelViewer = dynamic(
@@ -41,6 +42,7 @@ const ModelViewer = dynamic(
 );
 
 interface SavedModel {
+  generationId: string;
   key: string;
   url: string;
   size?: number;
@@ -72,25 +74,61 @@ function extractNameFromKey(key: string): string {
 }
 
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signInWithGoogle } = useAuth();
   const [models, setModels] = useState<SavedModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState<SavedModel | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-
-  const credits = 47;
+  const [creditState, setCreditState] = useState<{
+    credits: number;
+    plan: string | null;
+    subscriptionStatus: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
 
     let cancelled = false;
-    const userId = user?.uid || "anonymous";
 
-    fetch(`/api/models/list?userId=${userId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (!cancelled && data.success) {
-          setModels(data.models);
+    if (!user) {
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          setModels([]);
+          setCreditState(null);
+          setIsLoading(false);
+        }
+      });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    user
+      .getIdToken()
+      .then((token) =>
+        Promise.all([
+          fetch("/api/models/list", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).then((response) => response.json()),
+          fetch("/api/user/credits", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).then((response) => response.json()),
+        ])
+      )
+      .then(([modelsData, creditsData]) => {
+        if (cancelled) return;
+
+        if (modelsData.success) {
+          setModels(modelsData.models);
+        }
+
+        if (typeof creditsData.credits === "number") {
+          setCreditState(creditsData);
         }
       })
       .catch((error) => {
@@ -112,6 +150,55 @@ export default function DashboardPage() {
     setSelectedModel(model);
     setIsViewerOpen(true);
   };
+
+  const handleDelete = async (model: SavedModel) => {
+    if (!user) return;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/models/delete", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          generationId: model.generationId,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete model");
+      }
+
+      setModels((current) =>
+        current.filter((item) => item.generationId !== model.generationId)
+      );
+      toast.success("Model deleted");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete model";
+      toast.error(message);
+    }
+  };
+
+  const handleCreateFirstModel = async () => {
+    if (!user) {
+      try {
+        await signInWithGoogle();
+        toast.success("Signed in. Choose a paid plan to add credits.");
+      } catch {
+        toast.error("Sign in failed");
+      }
+    }
+  };
+
+  const displayedCredits = authLoading
+    ? "..."
+    : user
+      ? creditState?.credits ?? "..."
+      : "--";
 
   return (
     <div className="studio-shell min-h-screen text-white">
@@ -138,7 +225,7 @@ export default function DashboardPage() {
 
           <section className="grid gap-px border-x border-b border-white/10 bg-white/10 md:grid-cols-3">
             {[
-              { icon: CreditCard, label: "Credits", value: credits },
+              { icon: CreditCard, label: "Credits", value: displayedCredits },
               {
                 icon: Box,
                 label: "Saved models",
@@ -200,9 +287,18 @@ export default function DashboardPage() {
                     Create your first asset and it will appear here with export
                     format, file size, and preview controls.
                   </p>
-                  <Button asChild className="mt-7 rounded-none">
-                    <Link href="/generate">Create first model</Link>
-                  </Button>
+                  {user ? (
+                    <Button asChild className="mt-7 rounded-none">
+                      <Link href="/generate">Create first model</Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      className="mt-7 rounded-none"
+                      onClick={handleCreateFirstModel}
+                    >
+                      Sign in
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="grid auto-rows-[18rem] gap-px border border-white/10 bg-white/10 md:grid-cols-2 xl:grid-cols-3">
@@ -255,6 +351,14 @@ export default function DashboardPage() {
                                 <Download className="size-4" />
                               </a>
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(model)}
+                              className="rounded-none border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.1] hover:text-white"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -292,11 +396,12 @@ export default function DashboardPage() {
                   Credits
                 </p>
                 <p className="mt-4 font-display text-5xl font-black">
-                  {credits}
+                  {displayedCredits}
                 </p>
                 <p className="mt-3 text-sm opacity-70">
-                  Upgrade for larger batches, high quality mode, and team
-                  export history.
+                  {user
+                    ? "Upgrade for larger batches, high quality mode, and team export history."
+                    : "Sign in and choose a paid plan to start generating."}
                 </p>
                 <Button
                   asChild

@@ -1,97 +1,76 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import {
+  getCreditState,
+  InsufficientCreditsError,
+  reserveCredits,
+} from "@/lib/credits";
+import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const user = await requireUser(request);
+    const creditState = await getCreditState(user.uid);
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const db = adminDb();
-    const userDoc = await db.collection("users").doc(userId).get();
-
-    if (!userDoc.exists) {
-      // New users do not receive complimentary trial credits.
-      return NextResponse.json({
-        credits: 0,
-        plan: null,
-        subscriptionStatus: null,
-      });
-    }
-
-    const userData = userDoc.data();
-
-    return NextResponse.json({
-      credits: userData?.credits || 0,
-      plan: userData?.plan || null,
-      subscriptionStatus: userData?.subscriptionStatus || null,
-    });
+    return NextResponse.json(creditState);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     console.error("Get credits error:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to get credits: ${errorMessage}` },
+      { error: `Failed to get credits: ${getErrorMessage(error)}` },
       { status: 500 }
     );
   }
 }
 
-// Use a credit
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireUser(request);
     const body = await request.json();
-    const { userId, amount = 1 } = body;
+    const amount = Number(body.amount || 1);
 
-    if (!userId) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
-        { error: "User ID is required" },
+        { error: "Credit amount must be a positive number" },
         { status: 400 }
       );
     }
 
-    const db = adminDb();
-    const userRef = db.collection("users").doc(userId);
-    const userDoc = await userRef.get();
-
-    const currentCredits = userDoc.exists ? userDoc.data()?.credits || 0 : 0;
-
-    if (currentCredits < amount) {
-      return NextResponse.json(
-        { error: "Insufficient credits", credits: currentCredits },
-        { status: 402 }
-      );
-    }
-
-    // Deduct credits
-    const { FieldValue } = await import("firebase-admin/firestore");
-    await userRef.set(
-      {
-        credits: FieldValue.increment(-amount),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const result = await reserveCredits({
+      userId: user.uid,
+      amount,
+      reason: body.reason || "manual-credit-use",
+      generationId: body.generationId,
+    });
 
     return NextResponse.json({
       success: true,
       creditsUsed: amount,
-      remainingCredits: currentCredits - amount,
+      remainingCredits: result.remainingCredits,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
+    if (error instanceof InsufficientCreditsError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          credits: error.currentCredits,
+          requiredCredits: error.requiredCredits,
+        },
+        { status: 402 }
+      );
+    }
+
     console.error("Use credits error:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: `Failed to use credits: ${errorMessage}` },
+      { error: `Failed to use credits: ${getErrorMessage(error)}` },
       { status: 500 }
     );
   }

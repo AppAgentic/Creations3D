@@ -19,42 +19,58 @@ flowchart TD
   Generate --> WorldMode[3D world mode]
 
   TextMode --> TextApi[/api/generate/text-to-3d]
+  TextApi --> AuthGate[Firebase ID token check]
+  AuthGate --> CreditReserve[Credit reserve + ledger event]
+  CreditReserve --> FirestoreUsers
   TextApi --> ReplicateShapeE[Replicate Shap-E]
   ReplicateShapeE --> ModelPreview[ModelViewer preview]
+  ReplicateShapeE --> GenerationMeta[(Firestore generations)]
 
   ImageMode --> ImageApi[/api/generate/image-to-3d]
+  ImageApi --> AuthGate
   ImageApi --> ReplicateTrellis[Replicate TRELLIS]
   ReplicateTrellis --> ModelPreview
+  ReplicateTrellis --> GenerationMeta
 
   WorldMode --> WorldApi[/api/generate/world]
+  WorldApi --> AuthGate
   WorldApi --> WorldLabs[World Labs Marble]
   WorldLabs --> WorldViewer[WorldViewer iframe + exports]
+  WorldLabs --> GenerationMeta
 
   ModelPreview --> SaveModel[/api/models/save]
+  SaveModel --> AuthGate
   SaveModel --> R2[(Cloudflare R2 model storage)]
+  SaveModel --> GenerationMeta
 
   Dashboard --> ListModels[/api/models/list]
-  ListModels --> R2
+  ListModels --> AuthGate
+  ListModels --> GenerationMeta
+  GenerationMeta --> R2
   R2 --> SignedUrls[Signed/public model URLs]
   SignedUrls --> Dashboard
 
-  Generate -. planned .-> CreditsApi[/api/user/credits]
-  CreditsApi -. reads/writes .-> FirestoreUsers
+  Generate --> CreditsApi[/api/user/credits]
+  Dashboard --> CreditsApi
+  CreditsApi --> AuthGate
+  CreditsApi --> FirestoreUsers
+
+  Dashboard --> DeleteModel[/api/models/delete]
+  DeleteModel --> AuthGate
+  DeleteModel --> R2
+  DeleteModel --> GenerationMeta
 ```
 
 ## Current Completion Read
 
-The product skeleton is in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, text/image/world generation routes, model preview, save-to-library, R2 storage, dashboard listing, and the Studio Cockpit UI direction.
+The product skeleton and paid-access core are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image/world generation routes, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing, model deletion, Firestore generation metadata, and the Studio Cockpit UI direction.
 
-It is not production-complete yet. The main missing piece is server-side entitlement: generation APIs still need authenticated user validation, plan/credit checks before generation, and credit deduction after successful generation.
+It is closer to production-complete, but still needs live-provider QA and business/legal finishing before launch.
 
 ## Key Gaps
 
-- No free plan: removed from pricing, comparison table, and default credit API behavior.
-- Credit enforcement is incomplete: `/api/user/credits` exists, but text/image/world generation routes do not require credits yet.
-- API auth is incomplete: model list/save/generate routes accept `userId` from client or fall back to `anonymous`; they should verify Firebase ID tokens server-side.
-- Whop to Firebase mapping is incomplete: checkout passes Firebase UID metadata, but webhook currently writes by Whop user ID. It should write credits to the Firebase UID.
-- Dashboard credits are hardcoded (`47`) instead of reading `/api/user/credits`.
-- Generation metadata is not persisted in Firestore, so dashboard search/status/prompt history are mostly UI placeholders over R2 objects.
-- Model delete, rename, version history, and export conversion are not implemented.
-- Legal/support pages, production analytics, and admin/ops views are not implemented.
+- Live QA still needed against real Firebase, Whop, Replicate, World Labs, and R2 credentials.
+- Whop metadata shape should be confirmed in production webhooks; the handler now reads several common Firebase UID metadata locations.
+- Rename, version history UI, and true export conversion are not implemented.
+- Privacy, terms, and support placeholder pages exist, but legal copy and production support contact still need owner review.
+- Production analytics and admin/ops views are not implemented.

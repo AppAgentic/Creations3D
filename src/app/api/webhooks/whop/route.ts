@@ -9,10 +9,18 @@ function verifyWebhookSignature(
   signature: string,
   secret: string
 ): boolean {
+  if (!signature || !secret) {
+    return false;
+  }
+
   const expectedSignature = crypto
     .createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
+
+  if (signature.length !== expectedSignature.length) {
+    return false;
+  }
 
   return crypto.timingSafeEqual(
     Buffer.from(signature),
@@ -23,8 +31,43 @@ function verifyWebhookSignature(
 // Credit amounts for each plan
 const PLAN_CREDITS: Record<string, number> = {
   basic: 50,
+  creator: 50,
   pro: 150,
+  studio: 150,
 };
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function getFirebaseUid(data: Record<string, unknown>): string | null {
+  const metadata = asRecord(data.metadata);
+  const checkoutMetadata = asRecord(data.checkoutMetadata);
+  const checkoutMetadataSnake = asRecord(data.checkout_metadata);
+  const membership = asRecord(data.membership);
+  const membershipMetadata = asRecord(membership.metadata);
+  const user = asRecord(data.user);
+  const userMetadata = asRecord(user.metadata);
+
+  return (
+    readString(metadata.firebase_uid) ||
+    readString(metadata.firebaseUid) ||
+    readString(checkoutMetadataSnake.firebase_uid) ||
+    readString(checkoutMetadata.firebaseUid) ||
+    readString(membershipMetadata.firebase_uid) ||
+    readString(userMetadata.firebase_uid) ||
+    readString(userMetadata.firebaseUid) ||
+    readString(user.external_id) ||
+    readString(data.firebase_uid) ||
+    null
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,14 +93,24 @@ export async function POST(request: NextRequest) {
       case "membership.went_valid": {
         // User subscribed or renewed
         const { user, plan } = data;
-        const userId = user.id;
+        const firebaseUid = getFirebaseUid(data);
+
+        if (!firebaseUid) {
+          console.error("Whop webhook missing Firebase UID metadata");
+          return NextResponse.json(
+            { error: "Missing Firebase UID metadata" },
+            { status: 400 }
+          );
+        }
+
+        const whopUserId = user.id;
         const planId = plan?.id?.toLowerCase() || "basic";
         const credits = PLAN_CREDITS[planId] || 50;
 
-        const userRef = db.collection("users").doc(userId);
+        const userRef = db.collection("users").doc(firebaseUid);
         await userRef.set(
           {
-            whopUserId: userId,
+            whopUserId,
             email: user.email,
             plan: planId,
             credits: FieldValue.increment(credits),
@@ -67,29 +120,56 @@ export async function POST(request: NextRequest) {
           { merge: true }
         );
 
-        console.log(`User ${userId} subscribed to ${planId}, added ${credits} credits`);
+        await db.collection("creditEvents").add({
+          userId: firebaseUid,
+          whopUserId,
+          type: "credit",
+          amount: credits,
+          reason: "whop-membership-valid",
+          plan: planId,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+
+        console.log(`User ${firebaseUid} subscribed to ${planId}, added ${credits} credits`);
         break;
       }
 
       case "membership.went_invalid": {
         // Subscription cancelled or expired
         const { user } = data;
-        const userId = user.id;
+        const firebaseUid = getFirebaseUid(data);
 
-        const userRef = db.collection("users").doc(userId);
+        if (!firebaseUid) {
+          console.error("Whop webhook missing Firebase UID metadata");
+          return NextResponse.json(
+            { error: "Missing Firebase UID metadata" },
+            { status: 400 }
+          );
+        }
+
+        const userRef = db.collection("users").doc(firebaseUid);
         await userRef.update({
+          whopUserId: user.id,
           subscriptionStatus: "cancelled",
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        console.log(`User ${userId} subscription cancelled`);
+        console.log(`User ${firebaseUid} subscription cancelled`);
         break;
       }
 
       case "payment.succeeded": {
         // One-time payment (e.g., credit pack purchase)
         const { user, product } = data;
-        const userId = user.id;
+        const firebaseUid = getFirebaseUid(data);
+
+        if (!firebaseUid) {
+          console.error("Whop webhook missing Firebase UID metadata");
+          return NextResponse.json(
+            { error: "Missing Firebase UID metadata" },
+            { status: 400 }
+          );
+        }
 
         // Determine credits based on product
         let credits = 0;
@@ -104,13 +184,25 @@ export async function POST(request: NextRequest) {
         }
 
         if (credits > 0) {
-          const userRef = db.collection("users").doc(userId);
-          await userRef.update({
+          const userRef = db.collection("users").doc(firebaseUid);
+          await userRef.set({
+            whopUserId: user.id,
+            email: user.email,
             credits: FieldValue.increment(credits),
             updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          await db.collection("creditEvents").add({
+            userId: firebaseUid,
+            whopUserId: user.id,
+            type: "credit",
+            amount: credits,
+            reason: "whop-payment-succeeded",
+            productName,
+            createdAt: FieldValue.serverTimestamp(),
           });
 
-          console.log(`User ${userId} purchased ${credits} credits`);
+          console.log(`User ${firebaseUid} purchased ${credits} credits`);
         }
         break;
       }

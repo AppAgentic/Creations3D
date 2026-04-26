@@ -52,9 +52,11 @@ export default function PricingPage() {
   const { user, signInWithGoogle } = useAuth();
 
   const handleSubscribe = async (plan: (typeof plans)[0]) => {
+    let checkoutUser = user;
+
     if (!user) {
       try {
-        await signInWithGoogle();
+        checkoutUser = await signInWithGoogle();
         toast.success("Signed in. Redirecting to checkout.");
       } catch {
         toast.error("Please sign in to subscribe");
@@ -63,11 +65,11 @@ export default function PricingPage() {
     }
 
     const checkoutUrl = new URL(plan.whopUrl);
-    if (user?.email) {
-      checkoutUrl.searchParams.set("email", user.email);
+    if (checkoutUser?.email) {
+      checkoutUrl.searchParams.set("email", checkoutUser.email);
     }
-    if (user?.uid) {
-      checkoutUrl.searchParams.set("metadata[firebase_uid]", user.uid);
+    if (checkoutUser?.uid) {
+      checkoutUrl.searchParams.set("metadata[firebase_uid]", checkoutUser.uid);
     }
 
     window.location.assign(checkoutUrl.toString());
