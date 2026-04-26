@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
@@ -9,17 +8,6 @@ import { toast } from "sonner";
 import { ArrowRight, Check, CreditCard, Layers3 } from "lucide-react";
 
 const plans = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "",
-    credits: "5",
-    note: "For testing the pipeline.",
-    features: ["5 generations", "Text to 3D", "Image to 3D", "GLB export"],
-    cta: "Start free",
-    whopUrl: null,
-    emphasis: "quiet",
-  },
   {
     name: "Creator",
     price: "$9.99",
@@ -61,15 +49,9 @@ const plans = [
 ];
 
 export default function PricingPage() {
-  const router = useRouter();
   const { user, signInWithGoogle } = useAuth();
 
   const handleSubscribe = async (plan: (typeof plans)[0]) => {
-    if (!plan.whopUrl) {
-      router.push("/generate");
-      return;
-    }
-
     if (!user) {
       try {
         await signInWithGoogle();
@@ -120,15 +102,15 @@ export default function PricingPage() {
             </div>
           </header>
 
-          <section className="mt-10 grid gap-5 lg:grid-cols-[0.75fr_1.35fr_0.9fr] lg:items-start">
+          <section className="mt-10 grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
             {plans.map((plan) => (
               <article
                 key={plan.name}
                 className={`border p-5 ${
                   plan.emphasis === "primary"
-                    ? "border-primary bg-primary text-primary-foreground lg:mt-10"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-white/10 bg-white/[0.03]"
-                } ${plan.emphasis === "studio" ? "lg:mt-20" : ""}`}
+                } ${plan.emphasis === "studio" ? "lg:mt-16" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -180,13 +162,13 @@ export default function PricingPage() {
           </section>
 
           <section className="mt-14 border border-white/10 bg-white/[0.03]">
-            <div className="grid gap-px bg-white/10 md:grid-cols-4">
+            <div className="grid gap-px bg-white/10 md:grid-cols-3">
               {[
-                ["Feature", "Free", "Creator", "Studio"],
-                ["Text to 3D", "Included", "Included", "Included"],
-                ["Image to 3D", "Included", "Included", "Included"],
-                ["Exports", "GLB", "GLB / USDZ / OBJ", "GLB / USDZ / OBJ"],
-                ["Queue", "Standard", "Priority", "Priority"],
+                ["Feature", "Creator", "Studio"],
+                ["Text to 3D", "Included", "Included"],
+                ["Image to 3D", "Included", "Included"],
+                ["Exports", "GLB / USDZ / OBJ", "GLB / USDZ / OBJ"],
+                ["Queue", "Priority", "Priority"],
               ].map((row, rowIndex) =>
                 row.map((cell, cellIndex) => (
                   <div
@@ -209,10 +191,10 @@ export default function PricingPage() {
           <section className="mt-14 flex flex-col items-start justify-between gap-6 border-t border-white/10 pt-8 md:flex-row md:items-center">
             <div>
               <h2 className="font-display text-4xl font-black">
-                Need one model first?
+                Ready to start generating?
               </h2>
               <p className="mt-2 text-white/55">
-                Start in the cockpit and upgrade when the queue becomes real.
+                Pick a paid plan, then open the cockpit with credits ready.
               </p>
             </div>
             <Button asChild className="h-12 rounded-none px-6">

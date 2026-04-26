@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
     const userDoc = await db.collection("users").doc(userId).get();
 
     if (!userDoc.exists) {
-      // New user - return default credits
+      // New users do not receive complimentary trial credits.
       return NextResponse.json({
-        credits: 5, // Free trial credits
-        plan: "free",
+        credits: 0,
+        plan: null,
         subscriptionStatus: null,
       });
     }
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       credits: userData?.credits || 0,
-      plan: userData?.plan || "free",
+      plan: userData?.plan || null,
       subscriptionStatus: userData?.subscriptionStatus || null,
     });
   } catch (error) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const userRef = db.collection("users").doc(userId);
     const userDoc = await userRef.get();
 
-    const currentCredits = userDoc.exists ? userDoc.data()?.credits || 0 : 5;
+    const currentCredits = userDoc.exists ? userDoc.data()?.credits || 0 : 0;
 
     if (currentCredits < amount) {
       return NextResponse.json(
