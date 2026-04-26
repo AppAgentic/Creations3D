@@ -53,12 +53,12 @@ const proofPoints = [
   },
   {
     value: "47.2s",
-    label: "median first-pass model target",
+    label: "typical first model preview",
     detail: "Fast enough to test several directions in one working session.",
   },
   {
     value: "3",
-    label: "export formats planned in the cockpit",
+    label: "export formats in the workspace",
     detail: "Keep GLB, OBJ, and USDZ visible before the download step.",
   },
 ];
@@ -84,7 +84,7 @@ const promptExamples = [
 const faqs = [
   [
     "Is there a free plan?",
-    "No. Creations3D is paid-only so credits, model storage, and provider costs stay predictable.",
+    "No. Creations3D is paid-only so generation credits, model storage, and support stay predictable.",
   ],
   [
     "What does one credit buy?",
@@ -96,18 +96,18 @@ const faqs = [
   ],
   [
     "What happens if generation fails?",
-    "The app reserves credits first and refunds them when a provider failure is detected.",
+    "The app reserves credits first and refunds them if generation fails before a usable result is created.",
   ],
 ];
 
 const trustSignals = [
   {
     icon: BadgeCheck,
-    text: "Paid account required before provider spend",
+    text: "Paid credits are checked before each run",
   },
   {
     icon: TimerReset,
-    text: "Low-credit moments route back to plans",
+    text: "Low credits show a clear refill path",
   },
   {
     icon: ShieldCheck,
@@ -130,7 +130,7 @@ export default function HomePage() {
             <div className="max-w-3xl pt-12 sm:pt-20">
               <p className="mb-5 inline-flex items-center gap-2 border border-white/12 bg-white/[0.04] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
                 <ScanLine className="size-3.5" />
-                Paid 3D asset cockpit
+                Paid 3D asset studio
               </p>
               <h1 className="font-display text-6xl font-black leading-[0.9] tracking-normal text-balance sm:text-7xl lg:text-8xl">
                 Turn ideas into usable 3D assets.
@@ -217,15 +217,14 @@ export default function HomePage() {
           <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
-                Why people convert
+                Clear before you create
               </p>
               <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
                 The credit cost is clear before the model runs.
               </h2>
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
-                A paid-only product has to remove doubt fast. Creations3D shows
-                what each generation costs, where the output lands, and how to
-                keep useful results instead of treating generation like a toy.
+                Know what each generation costs, where the output lands, and
+                how to keep useful results before you spend a credit.
               </p>
             </div>
 
@@ -294,16 +293,15 @@ export default function HomePage() {
             <div className="grid gap-8 border-b border-white/10 pb-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
-                  Pre-purchase clarity
+                  Try a prompt first
                 </p>
                 <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
-                  Show the buyer what they can make first.
+                  See what you can make before you buy.
                 </h2>
               </div>
               <p className="max-w-2xl text-lg leading-8 text-white/60">
-                Instead of asking people to imagine “AI 3D,” the site anchors
-                the purchase around concrete prompts, output types, and use
-                cases that map to real creative work.
+                Start from concrete prompts, output types, and use cases that
+                map to real creative work before you choose a plan.
               </p>
             </div>
 
@@ -343,7 +341,7 @@ export default function HomePage() {
                 {[
                   ["47.2s", "median model pass"],
                   ["3", "export formats"],
-                  ["12k", "target poly preview"],
+                  ["12k", "polygon target"],
                 ].map(([value, label]) => (
                   <div key={label} className="bg-[#0c0f0c] p-6">
                     <p className="font-mono text-4xl text-white">{value}</p>
@@ -379,12 +377,12 @@ export default function HomePage() {
               <div>
                 <Box className="mb-8 size-10 text-primary" />
                 <h2 className="font-display text-5xl font-black leading-none text-balance lg:text-6xl">
-                  Built for return sessions, not one-off demos.
+                  Built for projects you come back to.
                 </h2>
                 <p className="mt-6 text-lg leading-8 text-white/62">
                   The generator, credit balance, asset library, and export
-                  controls stay connected so a buyer can come back, review old
-                  work, and start the next model without re-learning the tool.
+                  controls stay connected so you can review old work and start
+                  the next model without re-learning the tool.
                 </p>
                 <div className="mt-8 space-y-4">
                   {trustSignals.map(({ icon: TrustIcon, text }) => {
@@ -418,7 +416,7 @@ export default function HomePage() {
                 Buying questions
               </p>
               <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
-                Answer the objections before checkout.
+                Answers before checkout.
               </h2>
               <Button asChild className="mt-8 h-12 rounded-none px-6">
                 <TrackedLink

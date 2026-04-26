@@ -63,9 +63,9 @@ const plans = [
 ];
 
 const confidenceItems = [
-  "No free tier or surprise anonymous usage",
+  "No free tier. Every run uses your credits.",
   "Credit cost is visible before every generation",
-  "Whop checkout passes your Firebase account to the credit ledger",
+  "Checkout connects credits to your Creations3D account.",
 ];
 
 const pricingFaqs = [
@@ -75,7 +75,7 @@ const pricingFaqs = [
   ],
   [
     "Can I see the generator first?",
-    "Yes. You can open the cockpit before paying, but provider-backed generation requires a paid plan with credits.",
+    "Yes. You can open the generator before paying, but actual generation requires a paid plan with credits.",
   ],
   [
     "How are credits used?",
@@ -144,8 +144,8 @@ export default function PricingPage() {
                 <div>
                   <p className="font-medium">No free plan. No hidden runs.</p>
                   <p className="mt-1 text-sm leading-6 text-white/55">
-                    Every provider-backed generation requires a paid account and
-                    shows the credit cost before you spend.
+                    Every model run requires a paid account and shows the credit
+                    cost before you spend.
                   </p>
                 </div>
               </div>
@@ -276,7 +276,7 @@ export default function PricingPage() {
                 Checkout confidence
               </p>
               <h2 className="mt-4 font-display text-4xl font-black leading-none">
-                The paid handoff is explicit.
+                Know exactly what happens after checkout.
               </h2>
             </div>
             <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
@@ -309,7 +309,7 @@ export default function PricingPage() {
                 Ready to start generating?
               </h2>
               <p className="mt-2 text-white/55">
-                Pick a paid plan, then open the cockpit with credits ready.
+                Pick a paid plan, then open the generator with credits ready.
               </p>
             </div>
             <Button asChild className="h-12 rounded-none px-6">

@@ -14,9 +14,9 @@ export default function SupportPage() {
         </h1>
         <div className="mt-10 grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
           {[
-            ["Billing", "Subscription, credit balance, or Whop checkout help."],
-            ["Generation", "Failed jobs, exports, model quality, and provider errors."],
-            ["Account", "Firebase login, saved models, and data deletion requests."],
+            ["Billing", "Subscription, credit balance, or checkout help."],
+            ["Generation", "Failed jobs, exports, and model quality questions."],
+            ["Account", "Login, saved models, and data deletion requests."],
             ["Studios", "Team usage, higher credit volume, and custom workflows."],
           ].map(([title, body]) => (
             <div key={title} className="bg-[#0c0f0c] p-5">
@@ -26,7 +26,7 @@ export default function SupportPage() {
           ))}
         </div>
         <p className="mt-8 text-sm leading-7 text-white/62">
-          Add the production support email or helpdesk link here before launch.
+          Need help? Contact support and include your account email, prompt, and the model status you saw.
         </p>
         <Link
           href="/generate"

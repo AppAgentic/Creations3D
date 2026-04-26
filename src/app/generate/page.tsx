@@ -148,8 +148,13 @@ export default function GeneratePage() {
   const ensureCanGenerate = async () => {
     if (!user) {
       trackEvent("generation_auth_required", { mode });
-      await signInWithGoogle();
-      toast.success("Signed in. Choose a paid plan to add credits.");
+      try {
+        await signInWithGoogle();
+        toast.success("Signed in. Choose a paid plan to add credits.");
+      } catch {
+        toast.error("Sign in could not start. Try again or check your browser settings.");
+        trackEvent("generation_sign_in_failed", { mode });
+      }
       return false;
     }
 
@@ -805,10 +810,10 @@ export default function GeneratePage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
-                    First-run checklist
+                    Before you generate
                   </p>
                   <p className="mt-1 text-sm text-white/45">
-                    Keep the next conversion step obvious.
+                    Make sure your model is ready to run.
                   </p>
                 </div>
                 <span className="font-mono text-xs text-white/45">
@@ -876,8 +881,8 @@ export default function GeneratePage() {
                 </p>
                 <p className="mt-2 text-sm leading-6 text-white/58">
                   {user
-                    ? `This mode needs ${generationCost} credits. Add a paid plan or refill before running the provider.`
-                    : "You can inspect the cockpit first, but a paid plan is required before provider-backed generation."}
+                    ? `This mode needs ${generationCost} credits. Add a paid plan or refill before generating.`
+                    : "You can inspect the generator first, but a paid plan is required before creating a model."}
                 </p>
                 <Button
                   asChild

@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
-      console.error("Sign in error:", error);
       throw error;
     }
   };
@@ -47,7 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error("Sign out error:", error);
       throw error;
     }
   };
