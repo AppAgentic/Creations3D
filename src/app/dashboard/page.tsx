@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,7 +49,16 @@ interface SavedModel {
   size?: number;
   lastModified?: string;
   format: string;
+  prompt?: string;
+  type?: string;
+  creditsUsed?: number;
 }
+
+const emptyStateStarters = [
+  "Graphite sci-fi helmet with ceramic faceplate",
+  "Minimal desk lamp with brushed aluminum base",
+  "Compact product inspection bay with concrete floor",
+];
 
 function formatTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -76,6 +86,7 @@ function extractNameFromKey(key: string): string {
 export default function DashboardPage() {
   const { user, loading: authLoading, signInWithGoogle } = useAuth();
   const [models, setModels] = useState<SavedModel[]>([]);
+  const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState<SavedModel | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -125,6 +136,9 @@ export default function DashboardPage() {
 
         if (modelsData.success) {
           setModels(modelsData.models);
+          trackEvent("dashboard_models_loaded", {
+            count: modelsData.models.length,
+          });
         }
 
         if (typeof creditsData.credits === "number") {
@@ -147,6 +161,11 @@ export default function DashboardPage() {
   }, [authLoading, user]);
 
   const handleView = (model: SavedModel) => {
+    trackEvent("dashboard_model_review_clicked", {
+      generationId: model.generationId,
+      format: model.format,
+      type: model.type || null,
+    });
     setSelectedModel(model);
     setIsViewerOpen(true);
   };
@@ -175,15 +194,26 @@ export default function DashboardPage() {
       setModels((current) =>
         current.filter((item) => item.generationId !== model.generationId)
       );
+      trackEvent("dashboard_model_deleted", {
+        generationId: model.generationId,
+        format: model.format,
+      });
       toast.success("Model deleted");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to delete model";
       toast.error(message);
+      trackEvent("dashboard_model_delete_failed", {
+        generationId: model.generationId,
+        message,
+      });
     }
   };
 
   const handleCreateFirstModel = async () => {
+    trackEvent("dashboard_empty_cta_clicked", {
+      signedIn: Boolean(user),
+    });
     if (!user) {
       try {
         await signInWithGoogle();
@@ -199,6 +229,21 @@ export default function DashboardPage() {
     : user
       ? creditState?.credits ?? "..."
       : "--";
+  const filteredModels = models.filter((model) => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return true;
+
+    return [
+      extractNameFromKey(model.key),
+      model.prompt || "",
+      model.format,
+      model.type || "",
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedQuery);
+  });
+  const latestModel = models[0];
 
   return (
     <div className="studio-shell min-h-screen text-white">
@@ -250,10 +295,20 @@ export default function DashboardPage() {
           <section className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
             <div>
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 text-white/50 sm:w-80">
+                <label className="flex items-center gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 text-white/50 sm:w-80">
                   <Search className="size-4" />
-                  <span className="text-sm">Search assets</span>
-                </div>
+                  <input
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      trackEvent("dashboard_search_changed", {
+                        hasQuery: Boolean(event.target.value.trim()),
+                      });
+                    }}
+                    placeholder="Search assets"
+                    className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
+                  />
+                </label>
                 <div className="flex gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-white/45">
                   <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
                     Ready
@@ -278,15 +333,42 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : models.length === 0 ? (
-                <div className="flex min-h-[30rem] flex-col items-center justify-center border border-white/10 bg-white/[0.03] p-8 text-center">
-                  <Grid2X2 className="mb-6 size-12 text-primary" />
-                  <h2 className="font-display text-4xl font-black">
-                    No models yet
-                  </h2>
-                  <p className="mt-3 max-w-md text-white/55">
-                    Create your first asset and it will appear here with export
-                    format, file size, and preview controls.
-                  </p>
+                <div className="min-h-[30rem] border border-white/10 bg-white/[0.03] p-8">
+                  <div className="mx-auto max-w-2xl text-center">
+                    <Grid2X2 className="mx-auto mb-6 size-12 text-primary" />
+                    <h2 className="font-display text-4xl font-black">
+                      Build your first asset set
+                    </h2>
+                    <p className="mt-3 text-white/55">
+                      Start with a prompt below. Useful generations become a
+                      library instead of disappearing after the first session.
+                    </p>
+                  </div>
+                  <div className="mx-auto mt-8 grid max-w-4xl gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+                    {emptyStateStarters.map((starter) => (
+                      <Link
+                        key={starter}
+                        href={`/generate?starter=${encodeURIComponent(starter)}`}
+                        onClick={() =>
+                          trackEvent("dashboard_starter_prompt_clicked", {
+                            starter,
+                          })
+                        }
+                        className="group bg-[#0c0f0c] p-4 text-left transition-colors hover:bg-[#111710]"
+                      >
+                        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+                          Starter prompt
+                        </p>
+                        <p className="mt-5 text-sm leading-6 text-white/62">
+                          {starter}
+                        </p>
+                        <p className="mt-5 inline-flex items-center gap-2 text-xs text-white/45 group-hover:text-primary">
+                          Open generator
+                          <Plus className="size-3" />
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
                   {user ? (
                     <Button asChild className="mt-7 rounded-none">
                       <Link href="/generate">Create first model</Link>
@@ -300,9 +382,26 @@ export default function DashboardPage() {
                     </Button>
                   )}
                 </div>
+              ) : filteredModels.length === 0 ? (
+                <div className="flex min-h-[22rem] flex-col items-center justify-center border border-white/10 bg-white/[0.03] p-8 text-center">
+                  <Search className="mb-6 size-10 text-primary" />
+                  <h2 className="font-display text-3xl font-black">
+                    No matches
+                  </h2>
+                  <p className="mt-3 max-w-md text-white/55">
+                    Clear the search or generate a new variation for this
+                    concept.
+                  </p>
+                  <Button
+                    className="mt-6 rounded-none"
+                    onClick={() => setQuery("")}
+                  >
+                    Clear search
+                  </Button>
+                </div>
               ) : (
                 <div className="grid auto-rows-[18rem] gap-px border border-white/10 bg-white/10 md:grid-cols-2 xl:grid-cols-3">
-                  {models.map((model, index) => (
+                  {filteredModels.map((model, index) => (
                     <article
                       key={model.key}
                       className={`group relative overflow-hidden bg-[#0c0f0c] p-4 ${
@@ -326,6 +425,11 @@ export default function DashboardPage() {
                           <h2 className="line-clamp-1 font-medium">
                             {extractNameFromKey(model.key)}
                           </h2>
+                          {model.prompt && (
+                            <p className="mt-1 line-clamp-1 text-xs text-white/55">
+                              {model.prompt}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-white/45">
                             {model.lastModified
                               ? formatTimeAgo(new Date(model.lastModified))
@@ -371,6 +475,38 @@ export default function DashboardPage() {
             <aside className="space-y-5">
               <div className="border border-white/10 bg-white/[0.03] p-5">
                 <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                  Next session
+                </p>
+                <h2 className="mt-4 font-display text-3xl font-black leading-none">
+                  {models.length > 0
+                    ? "Turn the last asset into a set."
+                    : "Start with a useful first run."}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-white/55">
+                  {latestModel
+                    ? `Last saved: ${extractNameFromKey(latestModel.key)}. Generate a variation while the context is fresh.`
+                    : "Use a starter prompt, save the result, then build a small library around the same visual direction."}
+                </p>
+                <Button asChild className="mt-6 w-full rounded-none">
+                  <Link
+                    href={
+                      latestModel?.prompt
+                        ? `/generate?starter=${encodeURIComponent(latestModel.prompt)}`
+                        : "/generate"
+                    }
+                    onClick={() =>
+                      trackEvent("dashboard_next_session_clicked", {
+                        hasLatestPrompt: Boolean(latestModel?.prompt),
+                      })
+                    }
+                  >
+                    Generate next asset
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="border border-white/10 bg-white/[0.03] p-5">
+                <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
                   Recent exports
                 </p>
                 <div className="mt-5 divide-y divide-white/10">
@@ -400,7 +536,7 @@ export default function DashboardPage() {
                 </p>
                 <p className="mt-3 text-sm opacity-70">
                   {user
-                    ? "Upgrade for larger batches, high quality mode, and team export history."
+                    ? "Keep a balance ready so returning sessions can start from the library instead of the pricing page."
                     : "Sign in and choose a paid plan to start generating."}
                 </p>
                 <Button

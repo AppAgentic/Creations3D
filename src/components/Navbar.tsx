@@ -20,6 +20,7 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 
 const navItems = [
@@ -34,6 +35,7 @@ export function Navbar() {
 
   const handleSignIn = async () => {
     try {
+      trackEvent("navbar_sign_in_clicked");
       await signInWithGoogle();
       toast.success("Signed in");
     } catch {
@@ -84,6 +86,12 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() =>
+                    trackEvent("navbar_link_clicked", {
+                      label: item.label,
+                      href: item.href,
+                    })
+                  }
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "text-primary"
@@ -160,8 +168,15 @@ export function Navbar() {
                 Sign in
               </Button>
               <Button asChild className="rounded-none">
-                <Link href="/generate">
-                  Start creating
+                <Link
+                  href="/pricing"
+                  onClick={() =>
+                    trackEvent("navbar_primary_cta_clicked", {
+                      cta: "get_credits",
+                    })
+                  }
+                >
+                  Get credits
                   <ChevronRight className="size-4" />
                 </Link>
               </Button>

@@ -59,11 +59,16 @@ flowchart TD
   DeleteModel --> AuthGate
   DeleteModel --> R2
   DeleteModel --> GenerationMeta
+
+  Landing --> Analytics[Client analytics events]
+  Pricing --> Analytics
+  Generate --> Analytics
+  Dashboard --> Analytics
 ```
 
 ## Current Completion Read
 
-The product skeleton and paid-access core are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image/world generation routes, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing, model deletion, Firestore generation metadata, and the Studio Cockpit UI direction.
+The product skeleton, paid-access core, and first conversion/retention pass are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image/world generation routes, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing/search/delete, Firestore generation metadata, Studio Cockpit UI direction, landing proof/FAQ/starter prompts, pricing credit math, first-run checklist, returning-session prompts, and client analytics events.
 
 It is closer to production-complete, but still needs live-provider QA and business/legal finishing before launch.
 
@@ -71,6 +76,6 @@ It is closer to production-complete, but still needs live-provider QA and busine
 
 - Live QA still needed against real Firebase, Whop, Replicate, World Labs, and R2 credentials.
 - Whop metadata shape should be confirmed in production webhooks; the handler now reads several common Firebase UID metadata locations.
-- Rename, version history UI, and true export conversion are not implemented.
+- Rename, version history UI, and true multi-format export conversion are not implemented.
 - Privacy, terms, and support placeholder pages exist, but legal copy and production support contact still need owner review.
-- Production analytics and admin/ops views are not implemented.
+- Analytics events are instrumented client-side, but production analytics destination/reporting and admin/ops views are not implemented.

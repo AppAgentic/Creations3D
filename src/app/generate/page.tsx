@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { StudioScene } from "@/components/StudioScene";
 import { useAuth } from "@/lib/auth-context";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +36,12 @@ import {
   Type,
   Upload,
 } from "lucide-react";
+
+const starterPrompts = [
+  "Graphite sci-fi helmet with ceramic faceplate and small lime status lights",
+  "Minimal aluminum desk lamp with fabric shade and soft rounded base",
+  "Compact product inspection bay with concrete floor and overhead softboxes",
+];
 
 const ModelViewer = dynamic(
   () => import("@/components/ModelViewer").then((mod) => mod.ModelViewer),
@@ -73,6 +80,20 @@ export default function GeneratePage() {
   const [worldInputType, setWorldInputType] = useState<"text" | "image">(
     "text"
   );
+
+  useEffect(() => {
+    const starter = new URLSearchParams(window.location.search).get("starter");
+
+    if (starter) {
+      trackEvent("starter_prompt_loaded", { source: "url" });
+      const timer = window.setTimeout(() => {
+        setPrompt(starter);
+        setMode("text");
+      }, 0);
+
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -126,6 +147,7 @@ export default function GeneratePage() {
 
   const ensureCanGenerate = async () => {
     if (!user) {
+      trackEvent("generation_auth_required", { mode });
       await signInWithGoogle();
       toast.success("Signed in. Choose a paid plan to add credits.");
       return false;
@@ -135,6 +157,11 @@ export default function GeneratePage() {
 
     if (creditState && creditState.credits < cost) {
       toast.error(`You need ${cost} credits to generate. Choose a plan first.`);
+      trackEvent("generation_blocked_insufficient_credits", {
+        mode,
+        cost,
+        credits: creditState.credits,
+      });
       return false;
     }
 
@@ -146,6 +173,11 @@ export default function GeneratePage() {
     if (!file) return;
 
     setImageFile(file);
+    trackEvent("reference_image_uploaded", {
+      mode,
+      size: file.size,
+      type: file.type,
+    });
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -159,6 +191,11 @@ export default function GeneratePage() {
     if (!file || !file.type.startsWith("image/")) return;
 
     setImageFile(file);
+    trackEvent("reference_image_dropped", {
+      mode,
+      size: file.size,
+      type: file.type,
+    });
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -190,6 +227,12 @@ export default function GeneratePage() {
     setGenerationId(null);
     setIsSaved(false);
     setSavedUrl(null);
+    trackEvent("generation_started", {
+      mode,
+      cost: getGenerationCost(),
+      hasPrompt: Boolean(prompt.trim()),
+      hasImage: Boolean(imageFile),
+    });
 
     const progressInterval = setInterval(() => {
       setProgress((current) => {
@@ -232,6 +275,11 @@ export default function GeneratePage() {
       setProgress(100);
       setModelUrl(data.modelUrl);
       setGenerationId(data.generationId || null);
+      trackEvent("generation_completed", {
+        mode,
+        generationId: data.generationId || null,
+        creditsUsed: data.creditsUsed || getGenerationCost(),
+      });
       if (typeof data.remainingCredits === "number") {
         setCreditState((current) => ({
           credits: data.remainingCredits,
@@ -246,6 +294,7 @@ export default function GeneratePage() {
       const message =
         error instanceof Error ? error.message : "Failed to generate model";
       toast.error(message);
+      trackEvent("generation_failed", { mode, message });
       console.error("Generation error:", error);
     } finally {
       clearInterval(progressInterval);
@@ -269,6 +318,12 @@ export default function GeneratePage() {
     setWorldId(null);
     setWorldAssets(null);
     setGenerationId(null);
+    trackEvent("generation_started", {
+      mode: "world",
+      worldModel,
+      worldInputType,
+      cost: getGenerationCost(),
+    });
 
     const maxTime = worldModel === "mini" ? 60000 : 300000;
     const startTime = Date.now();
@@ -318,6 +373,13 @@ export default function GeneratePage() {
       setWorldId(data.worldId);
       setWorldAssets(data.assets);
       setGenerationId(data.generationId || null);
+      trackEvent("generation_completed", {
+        mode: "world",
+        worldModel,
+        worldInputType,
+        generationId: data.generationId || null,
+        creditsUsed: data.creditCost || getGenerationCost(),
+      });
       if (typeof data.remainingCredits === "number") {
         setCreditState((current) => ({
           credits: data.remainingCredits,
@@ -332,6 +394,12 @@ export default function GeneratePage() {
       const message =
         error instanceof Error ? error.message : "Failed to generate world";
       toast.error(message);
+      trackEvent("generation_failed", {
+        mode: "world",
+        worldModel,
+        worldInputType,
+        message,
+      });
       console.error("World generation error:", error);
     } finally {
       clearInterval(progressInterval);
@@ -370,11 +438,16 @@ export default function GeneratePage() {
       setSavedUrl(data.savedUrl);
       setGenerationId(data.generationId || generationId);
       setIsSaved(true);
+      trackEvent("model_saved", {
+        generationId: data.generationId || generationId,
+        format: "glb",
+      });
       toast.success("Model saved to library");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to save model";
       toast.error(message);
+      trackEvent("model_save_failed", { generationId, message });
       console.error("Save error:", error);
     } finally {
       setIsSaving(false);
@@ -382,6 +455,7 @@ export default function GeneratePage() {
   };
 
   const handleReset = () => {
+    trackEvent("generator_reset", { mode });
     setPrompt("");
     setImageFile(null);
     setImagePreview(null);
@@ -402,6 +476,39 @@ export default function GeneratePage() {
     : user
       ? creditState?.credits ?? "..."
       : "--";
+  const generationCost = getGenerationCost();
+  const hasKnownCredits = typeof creditState?.credits === "number";
+  const hasEnoughCredits =
+    Boolean(user) && hasKnownCredits && creditState!.credits >= generationCost;
+  const checklist = [
+    {
+      label: "Signed in",
+      done: Boolean(user),
+      detail: user ? "Account connected" : "Required before generation",
+    },
+    {
+      label: "Credits ready",
+      done: hasEnoughCredits,
+      detail: user
+        ? hasKnownCredits
+          ? `${creditState!.credits} available`
+          : "Checking balance"
+        : "Choose a paid plan",
+    },
+    {
+      label: mode === "image" ? "Reference added" : "Prompt drafted",
+      done: mode === "image" ? Boolean(imageFile) : Boolean(prompt.trim()),
+      detail:
+        mode === "image"
+          ? "Use a clear silhouette"
+          : "Describe material, scale, and use",
+    },
+    {
+      label: "Result saved",
+      done: isSaved,
+      detail: modelUrl || worldId ? "Keep useful work in the library" : "Generate first",
+    },
+  ];
 
   return (
     <div className="studio-shell min-h-screen text-white">
@@ -538,9 +645,11 @@ export default function GeneratePage() {
           <aside className="border-l border-white/10 bg-[#0b0e0b] p-4 lg:p-5">
             <Tabs
               value={mode}
-              onValueChange={(value) =>
-                setMode(value as "text" | "image" | "world")
-              }
+              onValueChange={(value) => {
+                const nextMode = value as "text" | "image" | "world";
+                setMode(nextMode);
+                trackEvent("generator_mode_changed", { mode: nextMode });
+              }}
               className="gap-5"
             >
               <TabsList className="grid h-auto w-full grid-cols-3 rounded-none bg-white/[0.04] p-1">
@@ -691,6 +800,94 @@ export default function GeneratePage() {
                 )}
               </TabsContent>
             </Tabs>
+
+            <div className="mt-6 border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                    First-run checklist
+                  </p>
+                  <p className="mt-1 text-sm text-white/45">
+                    Keep the next conversion step obvious.
+                  </p>
+                </div>
+                <span className="font-mono text-xs text-white/45">
+                  {generationCost} credit{generationCost === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="mt-4 divide-y divide-white/10">
+                {checklist.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-start justify-between gap-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-xs text-white/42">
+                        {item.detail}
+                      </p>
+                    </div>
+                    <span
+                      className={`mt-0.5 flex size-5 items-center justify-center border ${
+                        item.done
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-white/15 text-white/28"
+                      }`}
+                    >
+                      {item.done && <Check className="size-3" />}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border border-white/10 bg-white/[0.03] p-4">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                Prompt starters
+              </p>
+              <div className="mt-4 space-y-2">
+                {starterPrompts.map((starter) => (
+                  <button
+                    key={starter}
+                    type="button"
+                    onClick={() => {
+                      setPrompt(starter);
+                      setMode(starter.includes("inspection bay") ? "world" : "text");
+                      trackEvent("prompt_starter_selected", {
+                        starter,
+                        surface: "generator",
+                      });
+                    }}
+                    className="w-full border border-white/10 bg-black/20 p-3 text-left text-sm leading-6 text-white/58 transition-colors hover:border-primary/55 hover:text-white"
+                  >
+                    {starter}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {((user && hasKnownCredits && creditState!.credits < generationCost) ||
+              !user) && (
+              <div className="mt-6 border border-primary/40 bg-primary/10 p-4">
+                <p className="font-medium text-primary">
+                  {user ? "Not enough credits for this run" : "Credits unlock generation"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-white/58">
+                  {user
+                    ? `This mode needs ${generationCost} credits. Add a paid plan or refill before running the provider.`
+                    : "You can inspect the cockpit first, but a paid plan is required before provider-backed generation."}
+                </p>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="mt-4 h-10 rounded-none border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Link href="/pricing">View paid plans</Link>
+                </Button>
+              </div>
+            )}
 
             <div className="mt-6 space-y-3">
               <Button

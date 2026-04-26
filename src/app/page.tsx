@@ -1,15 +1,20 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { StudioScene } from "@/components/StudioScene";
+import { TrackedLink } from "@/components/TrackedLink";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
+  BadgeCheck,
   Box,
+  CheckCircle2,
   Download,
   FileImage,
   Gauge,
   Layers3,
   ScanLine,
+  ShieldCheck,
+  TimerReset,
   Type,
 } from "lucide-react";
 
@@ -40,6 +45,76 @@ const assets = [
   "game crate",
 ];
 
+const proofPoints = [
+  {
+    value: "1",
+    label: "credit for text or image mesh",
+    detail: "No mystery spend at the moment of creation.",
+  },
+  {
+    value: "47.2s",
+    label: "median first-pass model target",
+    detail: "Fast enough to test several directions in one working session.",
+  },
+  {
+    value: "3",
+    label: "export formats planned in the cockpit",
+    detail: "Keep GLB, OBJ, and USDZ visible before the download step.",
+  },
+];
+
+const promptExamples = [
+  {
+    prompt: "Graphite sci-fi helmet with ceramic faceplate",
+    output: "hero prop",
+    use: "game pitch",
+  },
+  {
+    prompt: "Minimal desk lamp, brushed aluminum, fabric shade",
+    output: "product mockup",
+    use: "commerce render",
+  },
+  {
+    prompt: "Compact inspection bay with concrete floor",
+    output: "3D world",
+    use: "scene preview",
+  },
+];
+
+const faqs = [
+  [
+    "Is there a free plan?",
+    "No. Creations3D is paid-only so credits, model storage, and provider costs stay predictable.",
+  ],
+  [
+    "What does one credit buy?",
+    "A text-to-3D or image-to-3D model pass uses 1 credit. World generation uses 3 or 5 credits depending on quality.",
+  ],
+  [
+    "Where do generated models go?",
+    "Save finished models to the asset library, then review, download, or delete them from the dashboard.",
+  ],
+  [
+    "What happens if generation fails?",
+    "The app reserves credits first and refunds them when a provider failure is detected.",
+  ],
+];
+
+const trustSignals = [
+  {
+    icon: BadgeCheck,
+    text: "Paid account required before provider spend",
+  },
+  {
+    icon: TimerReset,
+    text: "Low-credit moments route back to plans",
+  },
+  {
+    icon: ShieldCheck,
+    text: "Saved models remain tied to the user library",
+  },
+];
+
 export default function HomePage() {
   return (
     <div className="studio-shell min-h-screen overflow-hidden text-white">
@@ -55,23 +130,27 @@ export default function HomePage() {
             <div className="max-w-3xl pt-12 sm:pt-20">
               <p className="mb-5 inline-flex items-center gap-2 border border-white/12 bg-white/[0.04] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
                 <ScanLine className="size-3.5" />
-                Text and image to 3D
+                Paid 3D asset cockpit
               </p>
               <h1 className="font-display text-6xl font-black leading-[0.9] tracking-normal text-balance sm:text-7xl lg:text-8xl">
-                Creations3D
+                Turn ideas into usable 3D assets.
               </h1>
               <p className="mt-6 max-w-xl text-xl leading-8 text-white/72 sm:text-2xl">
-                Generate 3D models from prompts, references, and rough product
-                ideas. Review the mesh, refine materials, then export to your
-                pipeline.
+                Generate product props, reference meshes, and 3D worlds from
+                prompts or images. Know the credit cost before you run, then
+                save the result to a real asset library.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Button size="lg" asChild className="h-12 rounded-none px-6">
-                  <Link href="/generate">
-                    Start creating
+                  <TrackedLink
+                    href="/pricing"
+                    eventName="hero_primary_cta_clicked"
+                    eventPayload={{ cta: "choose_plan" }}
+                  >
+                    Choose a plan
                     <ArrowRight className="size-4" />
-                  </Link>
+                  </TrackedLink>
                 </Button>
                 <Button
                   size="lg"
@@ -79,8 +158,27 @@ export default function HomePage() {
                   asChild
                   className="h-12 rounded-none border-white/14 bg-white/[0.03] px-6 text-white hover:bg-white/[0.08] hover:text-white"
                 >
-                  <Link href="/dashboard">View examples</Link>
+                  <TrackedLink
+                    href="#proof"
+                    eventName="hero_secondary_cta_clicked"
+                    eventPayload={{ cta: "see_proof" }}
+                  >
+                    See what credits buy
+                  </TrackedLink>
                 </Button>
+              </div>
+
+              <div className="mt-7 flex flex-wrap gap-3 text-sm text-white/55">
+                {[
+                  "No free tier",
+                  "1 credit text/image models",
+                  "Library included",
+                ].map((item) => (
+                  <span key={item} className="inline-flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-primary" />
+                    {item}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -88,9 +186,11 @@ export default function HomePage() {
               {workflow.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <Link
+                  <TrackedLink
                     key={item.label}
                     href="/generate"
+                    eventName="workflow_tile_clicked"
+                    eventPayload={{ workflow: item.label }}
                     className="group bg-[#0c0f0c]/88 p-5 transition-colors hover:bg-[#111710]"
                   >
                     <div className="mb-5 flex items-center justify-between">
@@ -103,9 +203,46 @@ export default function HomePage() {
                     <p className="mt-2 max-w-sm text-sm leading-6 text-white/55">
                       {item.detail}
                     </p>
-                  </Link>
+                  </TrackedLink>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="proof"
+          className="border-y border-white/10 bg-[#0a0d0a] px-4 py-20 sm:px-6 lg:px-8"
+        >
+          <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
+                Why people convert
+              </p>
+              <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
+                The credit cost is clear before the model runs.
+              </h2>
+              <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
+                A paid-only product has to remove doubt fast. Creations3D shows
+                what each generation costs, where the output lands, and how to
+                keep useful results instead of treating generation like a toy.
+              </p>
+            </div>
+
+            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+              {proofPoints.map((point) => (
+                <div key={point.label} className="bg-[#0c0f0c] p-6">
+                  <p className="font-mono text-5xl text-white">
+                    {point.value}
+                  </p>
+                  <h3 className="mt-5 font-display text-2xl font-black leading-tight">
+                    {point.label}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-white/52">
+                    {point.detail}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -147,6 +284,53 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1500px]">
+            <div className="grid gap-8 border-b border-white/10 pb-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
+                  Pre-purchase clarity
+                </p>
+                <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
+                  Show the buyer what they can make first.
+                </h2>
+              </div>
+              <p className="max-w-2xl text-lg leading-8 text-white/60">
+                Instead of asking people to imagine “AI 3D,” the site anchors
+                the purchase around concrete prompts, output types, and use
+                cases that map to real creative work.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-px border border-white/10 bg-white/10 lg:grid-cols-[1.15fr_0.85fr_1fr]">
+              {promptExamples.map((example, index) => (
+                <TrackedLink
+                  key={example.prompt}
+                  href={`/generate?starter=${encodeURIComponent(example.prompt)}`}
+                  eventName="starter_prompt_clicked"
+                  eventPayload={{ prompt: example.prompt, surface: "landing" }}
+                  className={`group bg-[#0c0f0c] p-6 transition-colors hover:bg-[#111710] ${
+                    index === 1 ? "lg:mt-10" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+                      {example.output}
+                    </span>
+                    <ArrowRight className="size-4 text-white/25 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                  </div>
+                  <p className="mt-10 text-xl leading-8 text-white">
+                    “{example.prompt}”
+                  </p>
+                  <p className="mt-6 border-t border-white/10 pt-4 text-sm text-white/50">
+                    Best for {example.use}
+                  </p>
+                </TrackedLink>
               ))}
             </div>
           </div>
@@ -195,20 +379,68 @@ export default function HomePage() {
               <div>
                 <Box className="mb-8 size-10 text-primary" />
                 <h2 className="font-display text-5xl font-black leading-none text-balance lg:text-6xl">
-                  Built around the workspace.
+                  Built for return sessions, not one-off demos.
                 </h2>
                 <p className="mt-6 text-lg leading-8 text-white/62">
-                  The landing page, generator, library, and pricing all share
-                  one product language: a live 3D cockpit with the next action
-                  always visible.
+                  The generator, credit balance, asset library, and export
+                  controls stay connected so a buyer can come back, review old
+                  work, and start the next model without re-learning the tool.
                 </p>
+                <div className="mt-8 space-y-4">
+                  {trustSignals.map(({ icon: TrustIcon, text }) => {
+                    return (
+                      <div key={text} className="flex gap-3 text-sm text-white/58">
+                        <TrustIcon className="mt-0.5 size-4 text-primary" />
+                        <span>{text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               <Button asChild className="mt-10 h-12 w-fit rounded-none px-6">
-                <Link href="/generate">
-                  Open the cockpit
+                <TrackedLink
+                  href="/pricing"
+                  eventName="workspace_cta_clicked"
+                  eventPayload={{ cta: "pricing_from_retention_section" }}
+                >
+                  Get credits
                   <ArrowRight className="size-4" />
-                </Link>
+                </TrackedLink>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-white/10 px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-[1500px] gap-12 lg:grid-cols-[0.85fr_1.15fr]">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
+                Buying questions
+              </p>
+              <h2 className="mt-4 font-display text-5xl font-black leading-none text-balance lg:text-6xl">
+                Answer the objections before checkout.
+              </h2>
+              <Button asChild className="mt-8 h-12 rounded-none px-6">
+                <TrackedLink
+                  href="/pricing"
+                  eventName="faq_cta_clicked"
+                  eventPayload={{ cta: "choose_paid_plan" }}
+                >
+                  Choose a paid plan
+                  <ArrowRight className="size-4" />
+                </TrackedLink>
+              </Button>
+            </div>
+
+            <div className="divide-y divide-white/10 border-y border-white/10">
+              {faqs.map(([question, answer]) => (
+                <div key={question} className="grid gap-4 py-6 md:grid-cols-[0.8fr_1.2fr]">
+                  <h3 className="font-display text-2xl font-black">
+                    {question}
+                  </h3>
+                  <p className="text-base leading-7 text-white/58">{answer}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>

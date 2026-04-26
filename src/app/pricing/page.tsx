@@ -4,8 +4,16 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
-import { ArrowRight, Check, CreditCard, Layers3 } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  Check,
+  CreditCard,
+  Layers3,
+  ShieldCheck,
+} from "lucide-react";
 
 const plans = [
   {
@@ -13,39 +21,66 @@ const plans = [
     price: "$9.99",
     period: "/month",
     credits: "50",
+    badge: "Start here",
     note: "For designers, makers, and solo creators.",
+    math: "About $0.20 per text/image model pass",
+    worlds: "Up to 16 draft worlds or 10 high-quality worlds",
     features: [
       "50 credits per month",
-      "Text and image generation",
-      "All export formats",
-      "Priority queue",
+      "Text, image, and world generation",
+      "Saved model library",
+      "GLB model downloads",
       "Email support",
     ],
     cta: "Choose Creator",
     whopUrl:
       process.env.NEXT_PUBLIC_WHOP_BASIC_URL ||
       "https://whop.com/checkout/your-basic-plan",
-    emphasis: "primary",
+    emphasis: "starter",
   },
   {
     name: "Studio",
     price: "$19.99",
     period: "/month",
     credits: "150",
+    badge: "Best value",
     note: "For teams shipping more assets.",
+    math: "About $0.13 per text/image model pass",
+    worlds: "Up to 50 draft worlds or 30 high-quality worlds",
     features: [
       "150 credits per month",
-      "High-quality mode",
-      "Priority queue",
-      "API access",
+      "Lower per-credit generation cost",
+      "Text, image, and world generation",
+      "Saved model library",
       "Priority support",
     ],
-    cta: "Contact sales",
+    cta: "Choose Studio",
     whopUrl:
       process.env.NEXT_PUBLIC_WHOP_PRO_URL ||
       "https://whop.com/checkout/your-pro-plan",
-    emphasis: "studio",
+    emphasis: "primary",
   },
+];
+
+const confidenceItems = [
+  "No free tier or surprise anonymous usage",
+  "Credit cost is visible before every generation",
+  "Whop checkout passes your Firebase account to the credit ledger",
+];
+
+const pricingFaqs = [
+  [
+    "Which plan should I choose?",
+    "Creator is the lowest commitment. Studio is the better value if you expect to run batches or generate worlds.",
+  ],
+  [
+    "Can I see the generator first?",
+    "Yes. You can open the cockpit before paying, but provider-backed generation requires a paid plan with credits.",
+  ],
+  [
+    "How are credits used?",
+    "Text-to-3D and image-to-3D use 1 credit. World generation uses 3 or 5 credits depending on the quality mode.",
+  ],
 ];
 
 export default function PricingPage() {
@@ -54,12 +89,20 @@ export default function PricingPage() {
   const handleSubscribe = async (plan: (typeof plans)[0]) => {
     let checkoutUser = user;
 
+    trackEvent("pricing_checkout_started", {
+      plan: plan.name,
+      credits: plan.credits,
+      price: plan.price,
+    });
+
     if (!user) {
       try {
         checkoutUser = await signInWithGoogle();
         toast.success("Signed in. Redirecting to checkout.");
+        trackEvent("pricing_sign_in_completed", { plan: plan.name });
       } catch {
         toast.error("Please sign in to subscribe");
+        trackEvent("pricing_sign_in_failed", { plan: plan.name });
         return;
       }
     }
@@ -71,6 +114,11 @@ export default function PricingPage() {
     if (checkoutUser?.uid) {
       checkoutUrl.searchParams.set("metadata[firebase_uid]", checkoutUser.uid);
     }
+
+    trackEvent("pricing_checkout_redirected", {
+      plan: plan.name,
+      hasFirebaseUid: Boolean(checkoutUser?.uid),
+    });
 
     window.location.assign(checkoutUrl.toString());
   };
@@ -87,24 +135,42 @@ export default function PricingPage() {
                 Pricing
               </p>
               <h1 className="mt-4 font-display text-6xl font-black leading-none text-balance lg:text-7xl">
-                Upgrade your 3D pipeline.
+                Buy credits. Generate with intent.
               </h1>
             </div>
             <div className="border border-white/10 bg-white/[0.03] p-5">
               <div className="flex items-center gap-4">
                 <CreditCard className="size-7 text-primary" />
                 <div>
-                  <p className="font-medium">Credits convert to generations.</p>
+                  <p className="font-medium">No free plan. No hidden runs.</p>
                   <p className="mt-1 text-sm leading-6 text-white/55">
-                    Keep text, image, world generation, and export formats in
-                    one workspace.
+                    Every provider-backed generation requires a paid account and
+                    shows the credit cost before you spend.
                   </p>
                 </div>
               </div>
             </div>
           </header>
 
-          <section className="mt-10 grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+          <section className="mt-8 grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+            {[
+              ["Text or image model", "1 credit", "prompt or reference to mesh"],
+              ["World draft", "3 credits", "faster scene exploration"],
+              ["World high quality", "5 credits", "larger production pass"],
+            ].map(([label, value, detail]) => (
+              <div key={label} className="bg-[#0c0f0c] p-5">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/42">
+                  {label}
+                </p>
+                <p className="mt-3 font-display text-4xl font-black text-white">
+                  {value}
+                </p>
+                <p className="mt-2 text-sm text-white/50">{detail}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             {plans.map((plan) => (
               <article
                 key={plan.name}
@@ -112,12 +178,15 @@ export default function PricingPage() {
                   plan.emphasis === "primary"
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-white/10 bg-white/[0.03]"
-                } ${plan.emphasis === "studio" ? "lg:mt-16" : ""}`}
+                } ${plan.emphasis === "starter" ? "lg:mt-14" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-mono text-xs uppercase tracking-[0.22em] opacity-65">
                       {plan.name}
+                    </p>
+                    <p className="mt-3 inline-flex border border-current/20 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] opacity-70">
+                      {plan.badge}
                     </p>
                     <p className="mt-5 font-display text-5xl font-black">
                       {plan.price}
@@ -134,9 +203,19 @@ export default function PricingPage() {
                   <p className="mt-1 text-sm opacity-65">credits per month</p>
                 </div>
 
-                <p className="mt-5 min-h-12 text-sm leading-6 opacity-70">
+                <p className="mt-5 min-h-12 text-sm leading-6 opacity-75">
                   {plan.note}
                 </p>
+                <div className="mt-5 space-y-2 border border-current/15 p-4 text-sm opacity-75">
+                  <p className="flex gap-2">
+                    <Calculator className="mt-0.5 size-4 shrink-0" />
+                    {plan.math}
+                  </p>
+                  <p className="flex gap-2">
+                    <ShieldCheck className="mt-0.5 size-4 shrink-0" />
+                    {plan.worlds}
+                  </p>
+                </div>
 
                 <ul className="mt-8 space-y-3">
                   {plan.features.map((feature) => (
@@ -169,8 +248,9 @@ export default function PricingPage() {
                 ["Feature", "Creator", "Studio"],
                 ["Text to 3D", "Included", "Included"],
                 ["Image to 3D", "Included", "Included"],
-                ["Exports", "GLB / USDZ / OBJ", "GLB / USDZ / OBJ"],
-                ["Queue", "Priority", "Priority"],
+                ["World generation", "3 or 5 credits", "3 or 5 credits"],
+                ["GLB downloads", "Included", "Included"],
+                ["Best for", "solo creation", "batch creation"],
               ].map((row, rowIndex) =>
                 row.map((cell, cellIndex) => (
                   <div
@@ -188,6 +268,39 @@ export default function PricingPage() {
                 ))
               )}
             </div>
+          </section>
+
+          <section className="mt-14 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="border border-white/10 bg-white/[0.03] p-5">
+              <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
+                Checkout confidence
+              </p>
+              <h2 className="mt-4 font-display text-4xl font-black leading-none">
+                The paid handoff is explicit.
+              </h2>
+            </div>
+            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+              {confidenceItems.map((item) => (
+                <div key={item} className="bg-[#0c0f0c] p-5">
+                  <Check className="mb-8 size-5 text-primary" />
+                  <p className="text-sm leading-6 text-white/62">{item}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-14 divide-y divide-white/10 border-y border-white/10">
+            {pricingFaqs.map(([question, answer]) => (
+              <div
+                key={question}
+                className="grid gap-4 py-6 md:grid-cols-[0.75fr_1.25fr]"
+              >
+                <h2 className="font-display text-2xl font-black">
+                  {question}
+                </h2>
+                <p className="leading-7 text-white/58">{answer}</p>
+              </div>
+            ))}
           </section>
 
           <section className="mt-14 flex flex-col items-start justify-between gap-6 border-t border-white/10 pt-8 md:flex-row md:items-center">
