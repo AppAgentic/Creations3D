@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { StudioScene } from "@/components/StudioScene";
+import { LandingModelShowcase } from "@/components/LandingModelShowcase";
 import { TrackedLink } from "@/components/TrackedLink";
+import { landingModelAssets } from "@/lib/landing-models";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -26,23 +28,16 @@ const workflow = [
   },
   {
     label: "Image to mesh",
-    detail: "Upload a reference and convert shape, silhouette, and material cues.",
+    detail:
+      "Upload a reference and convert shape, silhouette, and material cues.",
     icon: FileImage,
   },
   {
     label: "Export GLB",
-    detail: "Save production-ready models for web, game engines, and pipelines.",
+    detail:
+      "Save production-ready models for web, game engines, and pipelines.",
     icon: Download,
   },
-];
-
-const assets = [
-  "chair",
-  "helmet",
-  "lamp",
-  "drone shell",
-  "sneaker sole",
-  "game crate",
 ];
 
 const proofPoints = [
@@ -65,18 +60,18 @@ const proofPoints = [
 
 const promptExamples = [
   {
-    prompt: "Graphite sci-fi helmet with ceramic faceplate",
-    output: "hero prop",
-    use: "game pitch",
-  },
-  {
-    prompt: "Minimal desk lamp, brushed aluminum, fabric shade",
+    prompt: "Small translucent concept car with soft studio reflections",
     output: "product mockup",
-    use: "commerce render",
+    use: "prototype pitch",
   },
   {
-    prompt: "Compact inspection bay with concrete floor",
-    output: "3D world",
+    prompt: "Portable speaker with glowing panel and layered materials",
+    output: "hard-surface asset",
+    use: "electronics mockup",
+  },
+  {
+    prompt: "Weathered street lantern for a compact inspection bay",
+    output: "3D world prop",
     use: "scene preview",
   },
 ];
@@ -123,10 +118,10 @@ export default function HomePage() {
       <main>
         <section className="relative min-h-[100svh] overflow-hidden pt-16">
           <div className="absolute inset-0 studio-grid opacity-55" />
-          <StudioScene className="absolute right-0 top-20 h-[68svh] min-h-[34rem] w-[92vw] md:w-[68vw]" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,#080a08_0%,rgba(8,10,8,0.94)_32%,rgba(8,10,8,0.42)_65%,rgba(8,10,8,0.08)_100%)]" />
+          <LandingModelShowcase className="absolute inset-y-16 right-0 z-0 h-[calc(100svh-4rem)] min-h-[42rem] w-full lg:w-[72%]" />
+          <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,#080a08_0%,rgba(8,10,8,0.96)_32%,rgba(8,10,8,0.46)_65%,rgba(8,10,8,0.08)_100%)]" />
 
-          <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-[1500px] flex-col justify-between px-4 py-10 sm:px-6 lg:px-8">
+          <div className="relative z-20 mx-auto flex min-h-[calc(100svh-4rem)] max-w-[1500px] flex-col justify-between px-4 py-10 sm:px-6 lg:px-8">
             <div className="max-w-3xl pt-12 sm:pt-20">
               <p className="mb-5 inline-flex items-center gap-2 border border-white/12 bg-white/[0.04] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
                 <ScanLine className="size-3.5" />
@@ -223,17 +218,15 @@ export default function HomePage() {
                 The credit cost is clear before the model runs.
               </h2>
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
-                Know what each generation costs, where the output lands, and
-                how to keep useful results before you spend a credit.
+                Know what each generation costs, where the output lands, and how
+                to keep useful results before you spend a credit.
               </p>
             </div>
 
             <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
               {proofPoints.map((point) => (
                 <div key={point.label} className="bg-[#0c0f0c] p-6">
-                  <p className="font-mono text-5xl text-white">
-                    {point.value}
-                  </p>
+                  <p className="font-mono text-5xl text-white">{point.value}</p>
                   <h3 className="mt-5 font-display text-2xl font-black leading-tight">
                     {point.label}
                   </h3>
@@ -261,28 +254,53 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-px border border-white/10 bg-white/10 md:grid-cols-3">
-              {assets.map((asset, index) => (
-                <div
-                  key={asset}
-                  className={`min-h-44 bg-[#111510] p-4 ${
-                    index === 1 ? "md:row-span-2" : ""
+            <div className="grid grid-cols-2 gap-px border border-white/10 bg-white/10 md:grid-cols-4">
+              {landingModelAssets.map((asset, index) => (
+                <TrackedLink
+                  key={asset.id}
+                  href={`/generate?starter=${encodeURIComponent(asset.prompt)}`}
+                  eventName="landing_model_asset_clicked"
+                  eventPayload={{ asset: asset.id }}
+                  className={`group min-h-72 bg-[#111510] p-4 transition-colors hover:bg-[#151b14] ${
+                    index === 0 ? "md:col-span-2" : ""
                   }`}
                 >
                   <div className="flex h-full flex-col justify-between">
-                    <div className="relative min-h-28 overflow-hidden bg-[#080a08]">
-                      <div className="absolute inset-0 studio-grid opacity-40" />
-                      <div className="absolute left-1/2 top-1/2 size-16 -translate-x-1/2 -translate-y-1/2 rotate-12 border border-primary/65 bg-white/[0.04] shadow-[0_0_40px_rgba(201,255,56,0.08)]" />
-                      <div className="absolute left-1/2 top-1/2 size-10 -translate-x-[25%] -translate-y-[30%] border border-white/25 bg-white/[0.08]" />
+                    <div className="relative min-h-48 overflow-hidden bg-[#080a08]">
+                      <Image
+                        src={asset.previewUrl}
+                        alt={`${asset.title} 3D model preview`}
+                        fill
+                        sizes={
+                          index === 0
+                            ? "(min-width: 768px) 36vw, 50vw"
+                            : "(min-width: 768px) 18vw, 50vw"
+                        }
+                        className="object-cover opacity-78 grayscale transition duration-500 group-hover:scale-105 group-hover:opacity-95 group-hover:grayscale-0"
+                      />
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_10%,rgba(8,10,8,0.18)_42%,rgba(8,10,8,0.88)_100%)]" />
+                      <div className="absolute left-3 top-3 border border-primary/35 bg-black/45 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-primary backdrop-blur">
+                        GLB
+                      </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between gap-4">
-                      <p className="font-mono text-xs uppercase tracking-[0.16em] text-white/72">
-                        {asset}
-                      </p>
-                      <span className="text-xs text-primary">Ready</span>
+                    <div className="mt-4 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+                          {asset.label}
+                        </p>
+                        <p className="mt-2 font-display text-2xl font-black text-white">
+                          {asset.title}
+                        </p>
+                        <p className="mt-2 max-w-xs text-sm leading-6 text-white/50">
+                          {asset.useCase}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs text-primary">
+                        Use prompt
+                      </span>
                     </div>
                   </div>
-                </div>
+                </TrackedLink>
               ))}
             </div>
           </div>
@@ -387,7 +405,10 @@ export default function HomePage() {
                 <div className="mt-8 space-y-4">
                   {trustSignals.map(({ icon: TrustIcon, text }) => {
                     return (
-                      <div key={text} className="flex gap-3 text-sm text-white/58">
+                      <div
+                        key={text}
+                        className="flex gap-3 text-sm text-white/58"
+                      >
                         <TrustIcon className="mt-0.5 size-4 text-primary" />
                         <span>{text}</span>
                       </div>
@@ -432,7 +453,10 @@ export default function HomePage() {
 
             <div className="divide-y divide-white/10 border-y border-white/10">
               {faqs.map(([question, answer]) => (
-                <div key={question} className="grid gap-4 py-6 md:grid-cols-[0.8fr_1.2fr]">
+                <div
+                  key={question}
+                  className="grid gap-4 py-6 md:grid-cols-[0.8fr_1.2fr]"
+                >
                   <h3 className="font-display text-2xl font-black">
                     {question}
                   </h3>
