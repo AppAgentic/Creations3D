@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import NextImage from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { StudioScene } from "@/components/StudioScene";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
@@ -625,38 +624,31 @@ export default function GeneratePage() {
                       className="h-full"
                     />
                   ) : (
-                    <StudioScene
-                      className="h-full min-h-[34rem]"
-                      interactive
-                      label="Empty 3D world preview"
+                    <EmptyViewport
+                      type="world"
+                      title="Your 3D world preview will appear here"
+                      detail="Choose a prompt or reference image, then generate a navigable environment."
                     />
                   )}
                 </div>
               ) : (
                 <div className="h-[calc(100%-8rem)] p-4 lg:p-6">
                   {isGenerating ? (
-                    <div className="relative h-full min-h-[34rem] overflow-hidden bg-[#080a08]">
-                      <StudioScene className="absolute inset-0" compact />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <div className="border border-white/10 bg-black/55 px-5 py-4 backdrop-blur">
-                          <p className="font-mono text-xs uppercase tracking-[0.22em] text-primary">
-                            Generating 3D model
-                          </p>
-                          <p className="mt-2 text-sm text-white/55">
-                            {progressLabel} complete
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <EmptyViewport
+                      type="model"
+                      title="Generating 3D model"
+                      detail={`${progressLabel} complete. Your preview will load here when the model is ready.`}
+                      active
+                    />
                   ) : modelUrl ? (
                     <div className="h-full min-h-[34rem] overflow-hidden border border-white/10">
                       <ModelViewer modelUrl={modelUrl} />
                     </div>
                   ) : (
-                    <StudioScene
-                      className="h-full min-h-[34rem]"
-                      interactive
-                      label="Empty 3D model preview"
+                    <EmptyViewport
+                      type="model"
+                      title="Your 3D model preview will appear here"
+                      detail="Add a prompt or reference image, then generate to see the real output."
                     />
                   )}
                 </div>
@@ -1072,6 +1064,50 @@ export default function GeneratePage() {
           </aside>
         </div>
       </main>
+    </div>
+  );
+}
+
+function EmptyViewport({
+  type,
+  title,
+  detail,
+  active = false,
+}: {
+  type: "model" | "world";
+  title: string;
+  detail: string;
+  active?: boolean;
+}) {
+  const Icon = type === "world" ? Globe : Box;
+
+  return (
+    <div className="relative flex h-full min-h-[34rem] items-center justify-center overflow-hidden border border-white/10 bg-[#080a08]">
+      <div className="absolute inset-0 studio-grid opacity-45" />
+      <div className="absolute inset-x-10 top-24 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" />
+      <div className="absolute left-1/2 top-1/2 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/10 bg-primary/[0.025]" />
+      <div className="absolute left-1/2 top-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-white/10" />
+      <div className="relative z-10 max-w-sm text-center">
+        <div
+          className={`mx-auto flex size-16 items-center justify-center border ${
+            active
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-white/15 bg-white/[0.03] text-primary"
+          }`}
+        >
+          {active ? (
+            <Loader2 className="size-7 animate-spin" />
+          ) : (
+            <Icon className="size-7" />
+          )}
+        </div>
+        <p className="mt-6 font-display text-3xl font-black leading-none text-white">
+          {title}
+        </p>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/55">
+          {detail}
+        </p>
+      </div>
     </div>
   );
 }
