@@ -22,20 +22,20 @@ import {
 
 const workflow = [
   {
-    label: "Text to mesh",
-    detail: "Describe the asset, choose quality, and generate a first pass.",
+    label: "Text to 3D model",
+    detail: "Describe the asset, choose quality, and generate a first model.",
     icon: Type,
   },
   {
-    label: "Image to mesh",
+    label: "Image to 3D model",
     detail:
-      "Upload a reference and convert shape, silhouette, and material cues.",
+      "Upload a reference image and turn its shape, silhouette, and material cues into a model.",
     icon: FileImage,
   },
   {
-    label: "Export GLB",
+    label: "Download GLB",
     detail:
-      "Save production-ready models for web, game engines, and pipelines.",
+      "Save useful results to your library, then download a GLB for web, games, or 3D tools.",
     icon: Download,
   },
 ];
@@ -43,7 +43,7 @@ const workflow = [
 const proofPoints = [
   {
     value: "1",
-    label: "credit for text or image mesh",
+    label: "credit per text or image model",
     detail: "No mystery spend at the moment of creation.",
   },
   {
@@ -53,8 +53,9 @@ const proofPoints = [
   },
   {
     value: "3",
-    label: "export formats in the workspace",
-    detail: "Keep GLB, OBJ, and USDZ visible before the download step.",
+    label: "primary download format",
+    detail:
+      "Generated models are saved and downloaded as GLB unless another format is shown as available.",
   },
 ];
 
@@ -83,7 +84,7 @@ const faqs = [
   ],
   [
     "What does one credit buy?",
-    "A text-to-3D or image-to-3D model pass uses 1 credit. World generation uses 3 or 5 credits depending on quality.",
+    "A text-to-3D or image-to-3D generation uses 1 credit. World generation uses 3 or 5 credits depending on quality.",
   ],
   [
     "Where do generated models go?",
@@ -131,9 +132,9 @@ export default function HomePage() {
                 Turn ideas into usable 3D assets.
               </h1>
               <p className="mt-6 max-w-xl text-xl leading-8 text-white/72 sm:text-2xl">
-                Generate product props, reference meshes, and 3D worlds from
-                prompts or images. Know the credit cost before you run, then
-                save the result to a real asset library.
+                Generate product props, reference models, and 3D worlds from
+                prompts or images. Type a prompt or upload an image, spend
+                credits to generate, then save or download the result.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -249,8 +250,12 @@ export default function HomePage() {
                 A library that looks like the work, not a file dump.
               </h2>
               <p className="mt-6 max-w-lg text-lg leading-8 text-white/60">
-                Generated models land with status, format, prompt lineage, and
-                export controls visible from the first scan.
+                Generated models land with status, format, original prompt, and
+                download controls visible from the first scan.
+              </p>
+              <p className="mt-4 max-w-lg text-sm leading-6 text-white/42">
+                Preview examples use CC0 sample GLBs to show the viewer and
+                library experience.
               </p>
             </div>
 
@@ -357,9 +362,9 @@ export default function HomePage() {
             <div className="border border-white/10 bg-white/[0.03] p-4">
               <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
                 {[
-                  ["47.2s", "median model pass"],
-                  ["3", "export formats"],
-                  ["12k", "polygon target"],
+                  ["47.2s", "median model generation"],
+                  ["GLB", "primary download"],
+                  ["Auto", "detail target"],
                 ].map(([value, label]) => (
                   <div key={label} className="bg-[#0c0f0c] p-6">
                     <p className="font-mono text-4xl text-white">{value}</p>
@@ -371,11 +376,11 @@ export default function HomePage() {
                 <div className="bg-[#0c0f0c] p-6">
                   <Layers3 className="mb-12 size-6 text-primary" />
                   <h3 className="font-display text-3xl font-black">
-                    Mesh review
+                    Model preview
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-white/55">
-                    Inspect topology, preview wireframe, and choose an export
-                    target before downloading.
+                    Rotate the result, check the shape, and download the model
+                    when it is ready.
                   </p>
                 </div>
                 <div className="bg-[#0c0f0c] p-6">
@@ -398,9 +403,9 @@ export default function HomePage() {
                   Built for projects you come back to.
                 </h2>
                 <p className="mt-6 text-lg leading-8 text-white/62">
-                  The generator, credit balance, asset library, and export
-                  controls stay connected so you can review old work and start
-                  the next model without re-learning the tool.
+                  The generator, credit balance, asset library, and downloads
+                  stay connected so you can review old work and start the next
+                  model without re-learning the tool.
                 </p>
                 <div className="mt-8 space-y-4">
                   {trustSignals.map(({ icon: TrustIcon, text }) => {
@@ -479,7 +484,7 @@ export default function HomePage() {
               Generate
             </Link>
             <Link href="/dashboard" className="hover:text-white">
-              Assets
+              Library
             </Link>
             <Link href="/support" className="hover:text-white">
               Support

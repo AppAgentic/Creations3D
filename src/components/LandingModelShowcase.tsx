@@ -160,7 +160,7 @@ export function LandingModelShowcase({
 
       <div className="absolute left-4 top-4 z-30 flex items-center gap-2 border border-white/10 bg-black/40 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60 backdrop-blur md:left-6 md:top-6">
         <Sparkles className="size-3.5 text-primary" />
-        Live 3D previews
+        Example 3D previews
       </div>
 
       <div className="absolute bottom-4 left-4 right-4 z-30 md:bottom-6 md:left-6 md:right-6 lg:bottom-auto lg:left-auto lg:right-6 lg:top-24 lg:w-[28rem]">
@@ -176,11 +176,11 @@ export function LandingModelShowcase({
             </div>
             <div className="flex items-center gap-2 border border-primary/35 bg-primary/10 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
               <Box className="size-3" />
-              GLB ready
+              GLB preview
             </div>
           </div>
           <p className="mt-4 max-w-lg text-sm leading-6 text-white/62 md:text-base">
-            “{activeAsset.prompt}”
+            Example prompt: “{activeAsset.prompt}”
           </p>
         </div>
 

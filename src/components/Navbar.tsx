@@ -26,7 +26,7 @@ import { toast } from "sonner";
 const navItems = [
   { href: "/generate", label: "Generate" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/dashboard", label: "Assets", authed: true },
+  { href: "/dashboard", label: "Library", authed: true },
 ];
 
 export function Navbar() {
@@ -39,7 +39,7 @@ export function Navbar() {
       await signInWithGoogle();
       toast.success("Signed in");
     } catch {
-      toast.error("Sign in failed");
+      toast.error("Sign in did not complete. Try again.");
     }
   };
 
@@ -48,7 +48,7 @@ export function Navbar() {
       await signOut();
       toast.success("Signed out");
     } catch {
-      toast.error("Sign out failed");
+      toast.error("Could not sign out. Try again.");
     }
   };
 
@@ -93,9 +93,7 @@ export function Navbar() {
                     })
                   }
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "text-primary"
-                      : "text-white/58 hover:text-white"
+                    isActive ? "text-primary" : "text-white/58 hover:text-white"
                   }`}
                 >
                   {item.label}
@@ -148,7 +146,7 @@ export function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard">
                     <LayoutDashboard className="mr-2 size-4" />
-                    Asset library
+                    My models
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

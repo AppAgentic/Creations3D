@@ -3,7 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { generateFileKey, uploadFile } from "@/lib/r2";
 import { adminDb } from "@/lib/firebase-admin";
 import { updateGenerationRecord } from "@/lib/generation-records";
-import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
+import { AuthError, requireUser } from "@/lib/server-auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,10 +27,7 @@ export async function POST(request: NextRequest) {
         .doc(targetGenerationId)
         .get();
 
-      if (
-        !generationDoc.exists ||
-        generationDoc.data()?.userId !== user.uid
-      ) {
+      if (!generationDoc.exists || generationDoc.data()?.userId !== user.uid) {
         return NextResponse.json(
           { error: "Generation not found" },
           { status: 404 }
@@ -83,13 +80,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     }
 
     console.error("Save model error:", error);
 
     return NextResponse.json(
-      { error: `Failed to save model: ${getErrorMessage(error)}` },
+      { error: "We couldn't save that model. Try again in a moment." },
       { status: 500 }
     );
   }

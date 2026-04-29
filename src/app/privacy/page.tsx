@@ -13,10 +13,11 @@ export default function PrivacyPage() {
           Privacy policy
         </h1>
         <div className="mt-10 space-y-7 text-sm leading-7 text-white/62">
+          <p>Last updated: April 29, 2026.</p>
           <p>
-            Creations3D uses account, payment, and generation data to provide
-            the product, manage credits, process subscriptions, and store model
-            history for the signed-in account.
+            Creations3D uses account, payment, prompt, upload, and generation
+            data to provide the product, manage credits, process subscriptions,
+            and store model history for the signed-in account.
           </p>
           <p>
             Generated model files may be stored in Cloudflare R2. Authentication
@@ -28,8 +29,10 @@ export default function PrivacyPage() {
             can contact support to request account or data deletion.
           </p>
           <p>
-            This policy is a product placeholder and should be reviewed by
-            counsel before public launch.
+            We keep service records needed for billing, security, credit
+            accounting, and support. If you ask us to delete your account, we
+            will remove or anonymize stored product data unless we need to keep
+            limited records for legal, billing, or fraud-prevention reasons.
           </p>
         </div>
         <Link

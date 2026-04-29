@@ -23,8 +23,8 @@ const plans = [
     credits: "50",
     badge: "Start here",
     note: "For designers, makers, and solo creators.",
-    math: "About $0.20 per text/image model pass",
-    worlds: "Up to 16 draft worlds or 10 high-quality worlds",
+    math: "About $0.20 per text/image model generation",
+    worlds: "Up to 16 draft 3D worlds or 10 high-quality 3D worlds",
     features: [
       "50 credits per month",
       "Text, image, and world generation",
@@ -45,8 +45,8 @@ const plans = [
     credits: "150",
     badge: "Best value",
     note: "For teams shipping more assets.",
-    math: "About $0.13 per text/image model pass",
-    worlds: "Up to 50 draft worlds or 30 high-quality worlds",
+    math: "About $0.13 per text/image model generation",
+    worlds: "Up to 50 draft 3D worlds or 30 high-quality 3D worlds",
     features: [
       "150 credits per month",
       "Lower per-credit generation cost",
@@ -63,15 +63,15 @@ const plans = [
 ];
 
 const confidenceItems = [
-  "No free tier. Every run uses your credits.",
-  "Credit cost is visible before every generation",
-  "Checkout connects credits to your Creations3D account.",
+  "No free tier. Every generation uses your credits.",
+  "Credits attach to the signed-in account you use at checkout.",
+  "If generation fails, reserved credits are refunded automatically.",
 ];
 
 const pricingFaqs = [
   [
     "Which plan should I choose?",
-    "Creator is the lowest commitment. Studio is the better value if you expect to run batches or generate worlds.",
+    "Creator is the lowest commitment. Studio is the better value if you expect to run batches or generate 3D worlds.",
   ],
   [
     "Can I see the generator first?",
@@ -79,7 +79,7 @@ const pricingFaqs = [
   ],
   [
     "How are credits used?",
-    "Text-to-3D and image-to-3D use 1 credit. World generation uses 3 or 5 credits depending on the quality mode.",
+    "Text-to-3D and image-to-3D use 1 credit. A 3D world is a navigable environment and uses 3 or 5 credits depending on quality.",
   ],
 ];
 
@@ -101,7 +101,7 @@ export default function PricingPage() {
         toast.success("Signed in. Redirecting to checkout.");
         trackEvent("pricing_sign_in_completed", { plan: plan.name });
       } catch {
-        toast.error("Please sign in to subscribe");
+        toast.error("Sign in did not complete. Try again to subscribe.");
         trackEvent("pricing_sign_in_failed", { plan: plan.name });
         return;
       }
@@ -144,8 +144,8 @@ export default function PricingPage() {
                 <div>
                   <p className="font-medium">No free plan. No hidden runs.</p>
                   <p className="mt-1 text-sm leading-6 text-white/55">
-                    Every model run requires a paid account and shows the credit
-                    cost before you spend.
+                    Every generation requires a paid account and shows the
+                    credit cost before you spend.
                   </p>
                 </div>
               </div>
@@ -154,9 +154,17 @@ export default function PricingPage() {
 
           <section className="mt-8 grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
             {[
-              ["Text or image model", "1 credit", "prompt or reference to mesh"],
-              ["World draft", "3 credits", "faster scene exploration"],
-              ["World high quality", "5 credits", "larger production pass"],
+              [
+                "Text or image model",
+                "1 credit",
+                "prompt or reference to 3D model",
+              ],
+              ["Draft 3D world", "3 credits", "faster environment preview"],
+              [
+                "High-quality 3D world",
+                "5 credits",
+                "larger environment generation",
+              ],
             ].map(([label, value, detail]) => (
               <div key={label} className="bg-[#0c0f0c] p-5">
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/42">
@@ -219,7 +227,10 @@ export default function PricingPage() {
 
                 <ul className="mt-8 space-y-3">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3 text-sm">
+                    <li
+                      key={feature}
+                      className="flex items-center gap-3 text-sm"
+                    >
                       <Check className="size-4 shrink-0" />
                       <span>{feature}</span>
                     </li>
@@ -232,7 +243,9 @@ export default function PricingPage() {
                       ? "bg-[#080a08] text-white hover:bg-[#111710]"
                       : ""
                   }`}
-                  variant={plan.emphasis === "primary" ? "secondary" : "outline"}
+                  variant={
+                    plan.emphasis === "primary" ? "secondary" : "outline"
+                  }
                   onClick={() => handleSubscribe(plan)}
                 >
                   {plan.cta}
@@ -295,9 +308,7 @@ export default function PricingPage() {
                 key={question}
                 className="grid gap-4 py-6 md:grid-cols-[0.75fr_1.25fr]"
               >
-                <h2 className="font-display text-2xl font-black">
-                  {question}
-                </h2>
+                <h2 className="font-display text-2xl font-black">{question}</h2>
                 <p className="leading-7 text-white/58">{answer}</p>
               </div>
             ))}
@@ -309,7 +320,8 @@ export default function PricingPage() {
                 Ready to start generating?
               </h2>
               <p className="mt-2 text-white/55">
-                Pick a paid plan, then open the generator with credits ready.
+                Pick a paid plan, then open the generator with credits added to
+                your signed-in account.
               </p>
             </div>
             <Button asChild className="h-12 rounded-none px-6">

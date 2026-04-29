@@ -17,10 +17,16 @@ interface WorldViewerProps {
   className?: string;
 }
 
-export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProps) {
+export function WorldViewer({
+  worldId,
+  assets,
+  className = "",
+}: WorldViewerProps) {
   if (!worldId) {
     return (
-      <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}>
+      <div
+        className={`bg-muted rounded-lg flex items-center justify-center ${className}`}
+      >
         <div className="text-center space-y-4 p-8">
           <Globe className="h-16 w-16 mx-auto text-muted-foreground" />
           <div>
@@ -28,7 +34,7 @@ export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProp
               Your 3D world will appear here
             </p>
             <p className="text-sm text-muted-foreground/70 mt-1">
-              Generate a navigable 3D environment from text or image
+              Generate a navigable 3D environment from text or an image
             </p>
           </div>
         </div>
@@ -56,7 +62,7 @@ export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProp
         <Button variant="outline" size="sm" asChild>
           <a href={viewerUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="mr-2 h-4 w-4" />
-            Open Full Viewer
+            Open world viewer
           </a>
         </Button>
 
@@ -65,7 +71,7 @@ export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProp
           <Button variant="outline" size="sm" asChild>
             <a href={assets.glbMesh} download={`world-${worldId}.glb`}>
               <Download className="mr-2 h-4 w-4" />
-              GLB Mesh
+              Download GLB
             </a>
           </Button>
         )}
@@ -74,16 +80,19 @@ export function WorldViewer({ worldId, assets, className = "" }: WorldViewerProp
           <Button variant="outline" size="sm" asChild>
             <a href={assets.splatFull} download={`world-${worldId}.spz`}>
               <Download className="mr-2 h-4 w-4" />
-              SPZ Splat
+              Download SPZ scene
             </a>
           </Button>
         )}
 
         {assets?.panorama && (
           <Button variant="outline" size="sm" asChild>
-            <a href={assets.panorama} download={`world-${worldId}-panorama.jpg`}>
+            <a
+              href={assets.panorama}
+              download={`world-${worldId}-panorama.jpg`}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Panorama
+              Download panorama
             </a>
           </Button>
         )}

@@ -12,17 +12,16 @@ export default function NotFound() {
           <div className="border border-white/10 bg-white/[0.03] p-6">
             <Box className="size-10 text-primary" />
             <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-primary">
-              Missing route
+              Page not found
             </p>
             <h1 className="mt-4 font-display text-6xl font-black leading-none">
-              This asset bay is empty.
+              This page does not exist.
             </h1>
           </div>
           <div>
             <p className="max-w-2xl text-xl leading-9 text-white/62">
-              The page you opened does not exist, but the main creation paths
-              are ready: buy credits, generate a model, or return to your
-              library.
+              The page you opened does not exist. You can return to the
+              generator, view paid plans, or open your saved model library.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild className="h-12 rounded-none px-6">

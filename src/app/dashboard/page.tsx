@@ -55,10 +55,21 @@ interface SavedModel {
 }
 
 const emptyStateStarters = [
-  "Graphite sci-fi helmet with ceramic faceplate",
-  "Minimal desk lamp with brushed aluminum base",
-  "Compact product inspection bay with concrete floor",
+  "Small translucent concept car with soft studio reflections",
+  "Portable speaker with layered materials and a glowing front panel",
+  "Compact product studio with concrete floors and soft overhead lighting",
 ];
+
+const INTERNAL_ERROR_PATTERN =
+  /(firebase|api|provider|configured|unauthorized|stack|server|failed to|not found)/i;
+
+function getFriendlyError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : "";
+  if (message && !INTERNAL_ERROR_PATTERN.test(message)) {
+    return message;
+  }
+  return fallback;
+}
 
 function formatTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -147,7 +158,9 @@ export default function DashboardPage() {
       })
       .catch((error) => {
         console.error("Failed to fetch models:", error);
-        toast.error("Failed to load models");
+        toast.error(
+          "We couldn't load your saved models. Try again in a moment."
+        );
       })
       .finally(() => {
         if (!cancelled) {
@@ -200,8 +213,10 @@ export default function DashboardPage() {
       });
       toast.success("Model deleted");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete model";
+      const message = getFriendlyError(
+        error,
+        "We couldn't delete that model. Try again in a moment."
+      );
       toast.error(message);
       trackEvent("dashboard_model_delete_failed", {
         generationId: model.generationId,
@@ -219,7 +234,7 @@ export default function DashboardPage() {
         await signInWithGoogle();
         toast.success("Signed in. Choose a paid plan to add credits.");
       } catch {
-        toast.error("Sign in failed");
+        toast.error("Sign in did not complete. Try again.");
       }
     }
   };
@@ -227,7 +242,7 @@ export default function DashboardPage() {
   const displayedCredits = authLoading
     ? "..."
     : user
-      ? creditState?.credits ?? "..."
+      ? (creditState?.credits ?? "...")
       : "--";
   const filteredModels = models.filter((model) => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -254,10 +269,10 @@ export default function DashboardPage() {
           <header className="grid gap-8 border-b border-white/10 pb-10 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.24em] text-primary">
-                Asset library
+                My models
               </p>
               <h1 className="mt-4 font-display text-5xl font-black leading-none text-balance sm:text-6xl">
-                Models, exports, and prompt history in one place.
+                Your saved 3D models.
               </h1>
             </div>
             <Button asChild className="h-12 w-fit rounded-none px-6">
@@ -278,7 +293,7 @@ export default function DashboardPage() {
               },
               {
                 icon: Clock,
-                label: "This month",
+                label: "Ready downloads",
                 value: isLoading ? "..." : models.length,
               },
             ].map(({ icon: MetricIcon, label, value }) => {
@@ -305,19 +320,19 @@ export default function DashboardPage() {
                         hasQuery: Boolean(event.target.value.trim()),
                       });
                     }}
-                    placeholder="Search assets"
+                    placeholder="Search models"
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
                   />
                 </label>
                 <div className="flex gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-white/45">
                   <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                    Ready
+                    Generated
                   </span>
                   <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                    Draft
+                    Saved
                   </span>
                   <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                    Exported
+                    GLB
                   </span>
                 </div>
               </div>
@@ -337,11 +352,12 @@ export default function DashboardPage() {
                   <div className="mx-auto max-w-2xl text-center">
                     <Grid2X2 className="mx-auto mb-6 size-12 text-primary" />
                     <h2 className="font-display text-4xl font-black">
-                      Build your first asset set
+                      Save your first 3D model
                     </h2>
                     <p className="mt-3 text-white/55">
-                      Start with a prompt below. Useful generations become a
-                      library instead of disappearing after the first session.
+                      Generated models appear here after you save them from the
+                      generator. Start with a prompt below or open the generator
+                      to create from scratch.
                     </p>
                   </div>
                   <div className="mx-auto mt-8 grid max-w-4xl gap-px border border-white/10 bg-white/10 md:grid-cols-3">
@@ -378,7 +394,7 @@ export default function DashboardPage() {
                       className="mt-7 rounded-none"
                       onClick={handleCreateFirstModel}
                     >
-                      Sign in
+                      Sign in to view models
                     </Button>
                   )}
                 </div>
@@ -443,7 +459,7 @@ export default function DashboardPage() {
                               className="rounded-none border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.1] hover:text-white"
                             >
                               <Eye className="size-4" />
-                              Review
+                              Preview
                             </Button>
                             <Button
                               size="sm"
@@ -479,13 +495,13 @@ export default function DashboardPage() {
                 </p>
                 <h2 className="mt-4 font-display text-3xl font-black leading-none">
                   {models.length > 0
-                    ? "Turn the last asset into a set."
-                    : "Start with a useful first run."}
+                    ? "Generate a variation from your last model."
+                    : "Create and save your first model."}
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-white/55">
                   {latestModel
-                    ? `Last saved: ${extractNameFromKey(latestModel.key)}. Generate a variation while the context is fresh.`
-                    : "Use a starter prompt, save the result, then build a small library around the same visual direction."}
+                    ? `Last saved: ${extractNameFromKey(latestModel.key)}. Use the same prompt direction to make another version.`
+                    : "Use a starter prompt, generate a model, then save it here for review and download."}
                 </p>
                 <Button asChild className="mt-6 w-full rounded-none">
                   <Link
@@ -500,17 +516,17 @@ export default function DashboardPage() {
                       })
                     }
                   >
-                    Generate next asset
+                    Generate next model
                   </Link>
                 </Button>
               </div>
 
               <div className="border border-white/10 bg-white/[0.03] p-5">
                 <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
-                  Recent exports
+                  Downloads
                 </p>
                 <div className="mt-5 divide-y divide-white/10">
-                  {["GLB", "USDZ", "OBJ"].map((format, index) => (
+                  {["GLB"].map((format) => (
                     <div
                       key={format}
                       className="flex items-center justify-between py-4 text-sm"
@@ -519,9 +535,7 @@ export default function DashboardPage() {
                         <FileArchive className="size-4 text-white/45" />
                         <span>{format}</span>
                       </div>
-                      <span className="text-white/42">
-                        {index === 0 ? "ready" : "available"}
-                      </span>
+                      <span className="text-white/42">ready</span>
                     </div>
                   ))}
                 </div>
@@ -536,7 +550,7 @@ export default function DashboardPage() {
                 </p>
                 <p className="mt-3 text-sm opacity-70">
                   {user
-                    ? "Keep a balance ready so returning sessions can start from the library instead of the pricing page."
+                    ? "Keep credits ready so you can generate from your saved models without returning to checkout."
                     : "Sign in and choose a paid plan to start generating."}
                 </p>
                 <Button
@@ -556,7 +570,9 @@ export default function DashboardPage() {
         <DialogContent className="h-[82vh] max-w-5xl rounded-none border-white/10 bg-[#080a08] text-white">
           <DialogHeader>
             <DialogTitle>
-              {selectedModel ? extractNameFromKey(selectedModel.key) : "3D Model"}
+              {selectedModel
+                ? extractNameFromKey(selectedModel.key)
+                : "3D Model"}
             </DialogTitle>
           </DialogHeader>
           <div className="min-h-0 flex-1">

@@ -13,10 +13,12 @@ export default function TermsPage() {
           Terms of service
         </h1>
         <div className="mt-10 space-y-7 text-sm leading-7 text-white/62">
+          <p>Last updated: April 29, 2026.</p>
           <p>
-            Creations3D provides paid credits for generating 3D assets from text,
-            image, and world prompts. Credits are consumed when a generation job
-            is accepted by the service.
+            Creations3D provides paid credits for generating 3D assets from
+            text, image, and world prompts. Credits are reserved when a
+            generation job starts and are consumed when a usable result is
+            returned.
           </p>
           <p>
             Users are responsible for prompts, uploaded references, and how
@@ -29,8 +31,15 @@ export default function TermsPage() {
             refunded automatically when the server receives a provider error.
           </p>
           <p>
-            These terms are a product placeholder and should be reviewed by
-            counsel before public launch.
+            Paid subscriptions and checkout are managed by Whop. Plan access,
+            monthly credit amounts, and billing changes apply to the signed-in
+            account used at checkout.
+          </p>
+          <p>
+            Creations3D may limit or suspend access for abuse, attempts to
+            bypass credit limits, unlawful content, or activity that harms the
+            service. Contact support if you need help with billing, credits, or
+            account deletion.
           </p>
         </div>
         <Link

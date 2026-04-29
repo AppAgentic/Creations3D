@@ -22,7 +22,6 @@ import {
   Check,
   CreditCard,
   Download,
-  FileArchive,
   Gauge,
   Globe,
   Image as ImageIcon,
@@ -38,10 +37,21 @@ import {
 } from "lucide-react";
 
 const starterPrompts = [
-  "Graphite sci-fi helmet with ceramic faceplate and small lime status lights",
-  "Minimal aluminum desk lamp with fabric shade and soft rounded base",
-  "Compact product inspection bay with concrete floor and overhead softboxes",
+  "Small translucent concept car with soft studio reflections",
+  "Portable speaker with layered materials and a glowing front panel",
+  "Compact product studio with concrete floors and soft overhead lighting",
 ];
+
+const INTERNAL_ERROR_PATTERN =
+  /(replicate|world labs|firebase|api|provider|configured|unauthorized|prediction|content type|stack|server|failed to generate 3d model:|failed to generate world:)/i;
+
+function getFriendlyError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : "";
+  if (message && !INTERNAL_ERROR_PATTERN.test(message)) {
+    return message;
+  }
+  return fallback;
+}
 
 const ModelViewer = dynamic(
   () => import("@/components/ModelViewer").then((mod) => mod.ModelViewer),
@@ -152,7 +162,9 @@ export default function GeneratePage() {
         await signInWithGoogle();
         toast.success("Signed in. Choose a paid plan to add credits.");
       } catch {
-        toast.error("Sign in could not start. Try again or check your browser settings.");
+        toast.error(
+          "Sign in did not complete. Try again or check your browser settings."
+        );
         trackEvent("generation_sign_in_failed", { mode });
       }
       return false;
@@ -217,12 +229,12 @@ export default function GeneratePage() {
     }
 
     if (mode === "text" && !prompt.trim()) {
-      toast.error("Enter a prompt");
+      toast.error("Add a prompt before generating.");
       return;
     }
 
     if (mode === "image" && !imageFile) {
-      toast.error("Upload an image");
+      toast.error("Upload a reference image before generating.");
       return;
     }
 
@@ -296,8 +308,10 @@ export default function GeneratePage() {
       }
       toast.success("3D model generated");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to generate model";
+      const message = getFriendlyError(
+        error,
+        "We couldn't generate that model. If a credit was reserved, it was refunded automatically. Try again with a simpler prompt."
+      );
       toast.error(message);
       trackEvent("generation_failed", { mode, message });
       console.error("Generation error:", error);
@@ -309,12 +323,12 @@ export default function GeneratePage() {
 
   const handleGenerateWorld = async () => {
     if (worldInputType === "text" && !prompt.trim()) {
-      toast.error("Enter a prompt");
+      toast.error("Add a world prompt before generating.");
       return;
     }
 
     if (worldInputType === "image" && !imageFile) {
-      toast.error("Upload an image");
+      toast.error("Upload a reference image before generating.");
       return;
     }
 
@@ -396,8 +410,10 @@ export default function GeneratePage() {
       }
       toast.success(`3D world generated (${data.creditCost} credits used)`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to generate world";
+      const message = getFriendlyError(
+        error,
+        "We couldn't generate that 3D world. If credits were reserved, they were refunded automatically. Try again with a simpler prompt."
+      );
       toast.error(message);
       trackEvent("generation_failed", {
         mode: "world",
@@ -415,7 +431,7 @@ export default function GeneratePage() {
   const handleSaveToLibrary = async () => {
     if (!modelUrl) return;
     if (!user) {
-      toast.error("Sign in to save models");
+      toast.error("Sign in to save models to your library.");
       return;
     }
 
@@ -449,8 +465,10 @@ export default function GeneratePage() {
       });
       toast.success("Model saved to library");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to save model";
+      const message = getFriendlyError(
+        error,
+        "We couldn't save that model to your library. Try again in a moment."
+      );
       toast.error(message);
       trackEvent("model_save_failed", { generationId, message });
       console.error("Save error:", error);
@@ -474,17 +492,27 @@ export default function GeneratePage() {
   };
 
   const progressLabel = `${Math.round(progress)}%`;
+  const worldQualityLabel = worldModel === "mini" ? "Draft" : "High";
   const activeModeLabel =
-    mode === "world" ? "3D world" : mode === "image" ? "image mesh" : "text mesh";
+    mode === "world"
+      ? "3D world"
+      : mode === "image"
+        ? "Image to 3D model"
+        : "Text to 3D model";
   const displayedCredits = authLoading
     ? "..."
     : user
-      ? creditState?.credits ?? "..."
+      ? (creditState?.credits ?? "...")
       : "--";
   const generationCost = getGenerationCost();
   const hasKnownCredits = typeof creditState?.credits === "number";
   const hasEnoughCredits =
     Boolean(user) && hasKnownCredits && creditState!.credits >= generationCost;
+  const needsReferenceImage =
+    mode === "image" || (mode === "world" && worldInputType === "image");
+  const hasRequiredInput = needsReferenceImage
+    ? Boolean(imageFile)
+    : Boolean(prompt.trim());
   const checklist = [
     {
       label: "Signed in",
@@ -501,17 +529,22 @@ export default function GeneratePage() {
         : "Choose a paid plan",
     },
     {
-      label: mode === "image" ? "Reference added" : "Prompt drafted",
-      done: mode === "image" ? Boolean(imageFile) : Boolean(prompt.trim()),
-      detail:
-        mode === "image"
-          ? "Use a clear silhouette"
-          : "Describe material, scale, and use",
+      label: needsReferenceImage ? "Reference image added" : "Prompt ready",
+      done: hasRequiredInput,
+      detail: needsReferenceImage
+        ? "Use a clear silhouette"
+        : "Describe material, scale, and use",
     },
     {
-      label: "Result saved",
-      done: isSaved,
-      detail: modelUrl || worldId ? "Keep useful work in the library" : "Generate first",
+      label: "Result ready",
+      done: Boolean(modelUrl || worldId),
+      detail: modelUrl
+        ? isSaved
+          ? "Saved to your library"
+          : "Save useful models to your library"
+        : worldId
+          ? "Open or download the world assets"
+          : "Generate first",
     },
   ];
 
@@ -562,13 +595,13 @@ export default function GeneratePage() {
                   Credits {displayedCredits}
                 </span>
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  GLB
+                  GLB download
                 </span>
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  USDZ
+                  Library save
                 </span>
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  OBJ
+                  Refund on failure
                 </span>
               </div>
             </div>
@@ -607,7 +640,7 @@ export default function GeneratePage() {
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                         <div className="border border-white/10 bg-black/55 px-5 py-4 backdrop-blur">
                           <p className="font-mono text-xs uppercase tracking-[0.22em] text-primary">
-                            Generating mesh
+                            Generating 3D model
                           </p>
                           <p className="mt-2 text-sm text-white/55">
                             {progressLabel} complete
@@ -632,10 +665,20 @@ export default function GeneratePage() {
 
             <div className="absolute inset-x-4 bottom-4 z-30 grid gap-px border border-white/10 bg-white/10 sm:grid-cols-4 lg:inset-x-6">
               {[
-                ["Mesh quality", mode === "world" ? worldModel : "high"],
-                ["Polycount", modelUrl ? "ready" : "target 12k"],
-                ["Materials", imagePreview ? "reference" : "procedural"],
-                ["Texture bake", modelUrl || worldId ? "available" : "queued"],
+                [
+                  "Model quality",
+                  mode === "world" ? worldQualityLabel : "High",
+                ],
+                ["Detail target", modelUrl || worldId ? "Ready" : "Balanced"],
+                [
+                  "Input",
+                  imagePreview
+                    ? "Reference image"
+                    : prompt.trim()
+                      ? "Prompt"
+                      : "Not set",
+                ],
+                ["Credits", `${generationCost} needed`],
               ].map(([label, value]) => (
                 <div key={label} className="bg-[#0c0f0c]/92 p-4">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">
@@ -694,7 +737,7 @@ export default function GeneratePage() {
                   />
                   <p className="text-sm leading-6 text-white/45">
                     Include material, scale, silhouette, and target use for a
-                    cleaner first pass.
+                    cleaner first model.
                   </p>
                 </div>
               </TabsContent>
@@ -713,8 +756,13 @@ export default function GeneratePage() {
               </TabsContent>
 
               <TabsContent value="world" className="space-y-6">
+                <p className="text-sm leading-6 text-white/45">
+                  Create a navigable 3D environment from a prompt or reference
+                  image. Draft worlds are faster; high-quality worlds take
+                  longer and use more credits.
+                </p>
                 <div className="space-y-3">
-                  <Label>Quality</Label>
+                  <Label>World quality</Label>
                   <RadioGroup
                     value={worldModel}
                     onValueChange={(value) =>
@@ -813,7 +861,8 @@ export default function GeneratePage() {
                     Before you generate
                   </p>
                   <p className="mt-1 text-sm text-white/45">
-                    Make sure your model is ready to run.
+                    Credits are reserved when generation starts and refunded
+                    automatically if it fails.
                   </p>
                 </div>
                 <span className="font-mono text-xs text-white/45">
@@ -859,7 +908,9 @@ export default function GeneratePage() {
                     type="button"
                     onClick={() => {
                       setPrompt(starter);
-                      setMode(starter.includes("inspection bay") ? "world" : "text");
+                      setMode(
+                        starter.includes("inspection bay") ? "world" : "text"
+                      );
                       trackEvent("prompt_starter_selected", {
                         starter,
                         surface: "generator",
@@ -873,11 +924,15 @@ export default function GeneratePage() {
               </div>
             </div>
 
-            {((user && hasKnownCredits && creditState!.credits < generationCost) ||
+            {((user &&
+              hasKnownCredits &&
+              creditState!.credits < generationCost) ||
               !user) && (
               <div className="mt-6 border border-primary/40 bg-primary/10 p-4">
                 <p className="font-medium text-primary">
-                  {user ? "Not enough credits for this run" : "Credits unlock generation"}
+                  {user
+                    ? "Not enough credits for this run"
+                    : "Credits unlock generation"}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-white/58">
                   {user
@@ -908,7 +963,8 @@ export default function GeneratePage() {
                 ) : mode === "world" ? (
                   <>
                     <Globe className="size-4" />
-                    Generate 3D world ({worldModel === "mini" ? "3" : "5"} credits)
+                    Generate 3D world ({worldModel === "mini" ? "3" : "5"}{" "}
+                    credits)
                   </>
                 ) : !user ? (
                   <>
@@ -972,7 +1028,7 @@ export default function GeneratePage() {
                         </>
                       )}
                     </Button>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid gap-2">
                       <Button
                         variant="outline"
                         className="rounded-none border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.07] hover:text-white"
@@ -983,20 +1039,13 @@ export default function GeneratePage() {
                           GLB
                         </a>
                       </Button>
-                      <Button
-                        variant="outline"
-                        className="rounded-none border-white/10 bg-white/[0.03] text-white"
-                        disabled
-                      >
-                        <FileArchive className="size-4" />
-                        OBJ
-                      </Button>
                     </div>
                   </>
                 )}
                 {worldId && (
                   <p className="text-sm leading-6 text-white/55">
-                    World assets are available in the viewport action row.
+                    Use the buttons below the viewer to open or download the
+                    world assets.
                   </p>
                 )}
               </div>
@@ -1007,9 +1056,9 @@ export default function GeneratePage() {
                 {
                   icon: Gauge,
                   label: "Quality",
-                  value: mode === "world" ? worldModel : "High",
+                  value: mode === "world" ? worldQualityLabel : "High",
                 },
-                { icon: Layers3, label: "Target", value: "Game/web" },
+                { icon: Layers3, label: "Use", value: "Web/game" },
               ].map(({ icon: MetricIcon, label, value }) => {
                 return (
                   <div key={label} className="bg-[#0c0f0c] p-4">
@@ -1080,7 +1129,7 @@ function ImageDropzone({
             <div>
               <p className="text-sm text-white/56">Drop an image here</p>
               <p className="mt-1 text-xs text-white/35">
-                Use clear silhouettes for stronger mesh results.
+                Use clear silhouettes for stronger 3D results.
               </p>
             </div>
             <Button

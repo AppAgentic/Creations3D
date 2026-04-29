@@ -115,7 +115,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     }
 
     if (error instanceof InsufficientCreditsError) {
@@ -146,7 +149,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: `Failed to generate 3D model: ${errorMessage}` },
+      {
+        error:
+          "We couldn't generate that 3D model from the image. Your credit was refunded automatically. Try a clearer image or contact support if it keeps happening.",
+      },
       { status: 500 }
     );
   }

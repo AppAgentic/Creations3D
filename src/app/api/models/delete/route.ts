@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase-admin";
 import { deleteFile } from "@/lib/r2";
-import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
+import { AuthError, requireUser } from "@/lib/server-auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,10 +20,7 @@ export async function POST(request: NextRequest) {
     const generationDoc = await generationRef.get();
 
     if (!generationDoc.exists || generationDoc.data()?.userId !== user.uid) {
-      return NextResponse.json(
-        { error: "Model not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
     const data = generationDoc.data();
@@ -48,13 +45,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     }
 
     console.error("Delete model error:", error);
 
     return NextResponse.json(
-      { error: `Failed to delete model: ${getErrorMessage(error)}` },
+      { error: "We couldn't delete that model. Try again in a moment." },
       { status: 500 }
     );
   }

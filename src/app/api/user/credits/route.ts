@@ -4,7 +4,7 @@ import {
   InsufficientCreditsError,
   reserveCredits,
 } from "@/lib/credits";
-import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
+import { AuthError, requireUser } from "@/lib/server-auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,13 +14,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(creditState);
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     }
 
     console.error("Get credits error:", error);
 
     return NextResponse.json(
-      { error: `Failed to get credits: ${getErrorMessage(error)}` },
+      { error: "We couldn't load your credit balance. Try again in a moment." },
       { status: 500 }
     );
   }
@@ -53,7 +56,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     }
 
     if (error instanceof InsufficientCreditsError) {
@@ -70,7 +76,7 @@ export async function POST(request: NextRequest) {
     console.error("Use credits error:", error);
 
     return NextResponse.json(
-      { error: `Failed to use credits: ${getErrorMessage(error)}` },
+      { error: "We couldn't update your credits. Try again in a moment." },
       { status: 500 }
     );
   }
