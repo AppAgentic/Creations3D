@@ -63,6 +63,20 @@ function normalizeOutputUrl(value: unknown): string {
   return "";
 }
 
+async function resolveOutputUrl(value: unknown): Promise<string> {
+  if (typeof value === "object" && value) {
+    const record = value as Record<string, unknown>;
+    if (typeof record.url === "function") {
+      const url = await (
+        record.url as () => Promise<URL | string> | URL | string
+      ).call(value);
+      return url instanceof URL ? url.toString() : String(url);
+    }
+  }
+
+  return normalizeOutputUrl(value);
+}
+
 function collectOutputUrls(output: unknown): string[] {
   if (!output) return [];
 
@@ -239,20 +253,25 @@ export async function imageTo3D(
         mesh_simplify: 0.95,
         ss_sampling_steps: 12,
         slat_sampling_steps: 12,
+        output_format: "glb",
       },
     }
   );
 
-  // TRELLIS returns an object with model and video URLs
+  // TRELLIS returns FileOutput objects from the Replicate client.
   const result = output as {
-    model?: string;
-    color_video?: string;
+    model?: unknown;
+    model_file?: unknown;
+    color_video?: unknown;
   };
+  const modelUrl =
+    (await resolveOutputUrl(result.model_file)) ||
+    (await resolveOutputUrl(result.model));
 
   return {
-    modelUrl: result.model || "",
+    modelUrl,
     format: "glb",
-    previewUrl: result.color_video,
+    previewUrl: await resolveOutputUrl(result.color_video),
   };
 }
 
