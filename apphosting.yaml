@@ -12,6 +12,20 @@ runConfig:
   maxInstances: 10
 
 env:
+  # Firebase public web config (safe for browser bundle)
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyCAWEaebtsRtFUDaWtHkCsTYklkGMIlmK0
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: creations3d-dev.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: creations3d-dev
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: creations3d-dev.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: 1066348152293
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:1066348152293:web:87a26540633c7ca274db0c
+
   # Replicate API (3D Object Generation)
   - variable: REPLICATE_API_TOKEN
     secret: replicate-api-token
