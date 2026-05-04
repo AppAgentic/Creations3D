@@ -16,9 +16,8 @@ export default function TermsPage() {
           <p>Last updated: April 29, 2026.</p>
           <p>
             Creations3D provides paid credits for generating 3D assets from
-            text, image, and world prompts. Credits are reserved when a
-            generation job starts and are consumed when a usable result is
-            returned.
+            text and image prompts. Credits are reserved when a generation job
+            starts and are consumed when a usable result is returned.
           </p>
           <p>
             Users are responsible for prompts, uploaded references, and how
@@ -27,8 +26,8 @@ export default function TermsPage() {
           </p>
           <p>
             Generation availability can depend on third-party providers
-            including Replicate and World Labs. Failed generation jobs should be
-            refunded automatically when the server receives a provider error.
+            including Replicate. Failed generation jobs should be refunded
+            automatically when the server receives a provider error.
           </p>
           <p>
             Paid subscriptions and checkout are managed by Whop. Plan access,

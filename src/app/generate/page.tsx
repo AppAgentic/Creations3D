@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
+import { worldGenerationEnabled } from "@/lib/features";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,7 +39,7 @@ import {
 const starterPrompts = [
   "Small translucent concept car with soft studio reflections",
   "Portable speaker with layered materials and a glowing front panel",
-  "Compact product studio with concrete floors and soft overhead lighting",
+  "Weathered street lantern with worn metal, glass panels, and warm internal light",
 ];
 
 const INTERNAL_ERROR_PATTERN =
@@ -150,7 +151,7 @@ export default function GeneratePage() {
   };
 
   const getGenerationCost = () => {
-    if (mode !== "world") return 1;
+    if (mode !== "world" || !worldGenerationEnabled) return 1;
     return worldModel === "mini" ? 3 : 5;
   };
 
@@ -223,6 +224,13 @@ export default function GeneratePage() {
     if (!(await ensureCanGenerate())) return;
 
     if (mode === "world") {
+      if (!worldGenerationEnabled) {
+        toast.error(
+          "3D world generation is not available yet. Use text or image to create a 3D model."
+        );
+        setMode("text");
+        return;
+      }
       await handleGenerateWorld();
       return;
     }
@@ -493,7 +501,7 @@ export default function GeneratePage() {
   const progressLabel = `${Math.round(progress)}%`;
   const worldQualityLabel = worldModel === "mini" ? "Draft" : "High";
   const activeModeLabel =
-    mode === "world"
+    mode === "world" && worldGenerationEnabled
       ? "3D world"
       : mode === "image"
         ? "Image to 3D model"
@@ -505,47 +513,15 @@ export default function GeneratePage() {
       : "--";
   const generationCost = getGenerationCost();
   const hasKnownCredits = typeof creditState?.credits === "number";
-  const hasEnoughCredits =
-    Boolean(user) && hasKnownCredits && creditState!.credits >= generationCost;
-  const needsReferenceImage =
-    mode === "image" || (mode === "world" && worldInputType === "image");
-  const hasRequiredInput = needsReferenceImage
-    ? Boolean(imageFile)
-    : Boolean(prompt.trim());
-  const checklist = [
-    {
-      label: "Signed in",
-      done: Boolean(user),
-      detail: user ? "Account connected" : "Required before generation",
-    },
-    {
-      label: "Credits ready",
-      done: hasEnoughCredits,
-      detail: user
-        ? hasKnownCredits
-          ? `${creditState!.credits} available`
-          : "Checking balance"
-        : "Choose a paid plan",
-    },
-    {
-      label: needsReferenceImage ? "Reference image added" : "Prompt ready",
-      done: hasRequiredInput,
-      detail: needsReferenceImage
-        ? "Use a clear silhouette"
-        : "Describe material, scale, and use",
-    },
-    {
-      label: "Result ready",
-      done: Boolean(modelUrl || worldId),
-      detail: modelUrl
-        ? isSaved
-          ? "Saved to your library"
-          : "Save useful models to your library"
-        : worldId
-          ? "Open or download the world assets"
-          : "Generate first",
-    },
-  ];
+  const generationCreditLabel = `${generationCost} credit${
+    generationCost === 1 ? "" : "s"
+  }`;
+  const generationDurationLabel =
+    mode === "world" && worldGenerationEnabled
+      ? worldModel === "mini"
+        ? "usually 30-45s"
+        : "usually ~5 min"
+      : "usually ~1 min";
 
   return (
     <div className="studio-shell min-h-screen text-white">
@@ -606,7 +582,7 @@ export default function GeneratePage() {
             </div>
 
             <div className="relative z-10 h-full pt-32">
-              {mode === "world" ? (
+              {mode === "world" && worldGenerationEnabled ? (
                 <div className="h-[calc(100%-8rem)] p-4 lg:p-6">
                   {isGenerating ? (
                     <div className="flex h-full min-h-[34rem] items-center justify-center bg-[#080a08]">
@@ -659,7 +635,9 @@ export default function GeneratePage() {
               {[
                 [
                   "Model quality",
-                  mode === "world" ? worldQualityLabel : "High",
+                  mode === "world" && worldGenerationEnabled
+                    ? worldQualityLabel
+                    : "High",
                 ],
                 ["Detail target", modelUrl || worldId ? "Ready" : "Balanced"],
                 [
@@ -692,7 +670,11 @@ export default function GeneratePage() {
               }}
               className="gap-5"
             >
-              <TabsList className="grid h-auto w-full grid-cols-3 rounded-none bg-white/[0.04] p-1">
+              <TabsList
+                className={`grid h-auto w-full rounded-none bg-white/[0.04] p-1 ${
+                  worldGenerationEnabled ? "grid-cols-3" : "grid-cols-2"
+                }`}
+              >
                 <TabsTrigger
                   value="text"
                   className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -707,13 +689,15 @@ export default function GeneratePage() {
                   <ImageIcon className="size-4" />
                   Image
                 </TabsTrigger>
-                <TabsTrigger
-                  value="world"
-                  className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  <Globe className="size-4" />
-                  World
-                </TabsTrigger>
+                {worldGenerationEnabled && (
+                  <TabsTrigger
+                    value="world"
+                    className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    <Globe className="size-4" />
+                    World
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="text" className="space-y-5">
@@ -747,147 +731,106 @@ export default function GeneratePage() {
                 />
               </TabsContent>
 
-              <TabsContent value="world" className="space-y-6">
-                <p className="text-sm leading-6 text-white/45">
-                  Create a navigable 3D environment from a prompt or reference
-                  image. Draft worlds are faster; high-quality worlds take
-                  longer and use more credits.
-                </p>
-                <div className="space-y-3">
-                  <Label>World quality</Label>
-                  <RadioGroup
-                    value={worldModel}
-                    onValueChange={(value) =>
-                      setWorldModel(value as "mini" | "plus")
-                    }
-                    className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
-                  >
-                    {[
-                      ["mini", "Draft", "30-45s", "3 credits"],
-                      ["plus", "High", "~5 min", "5 credits"],
-                    ].map(([value, name, time, cost]) => (
-                      <div key={value} className="relative bg-[#0c0f0c]">
-                        <RadioGroupItem
-                          value={value}
-                          id={value}
-                          className="peer sr-only"
-                          disabled={isGenerating}
-                        />
-                        <Label
-                          htmlFor={value}
-                          className="block cursor-pointer p-4 transition-colors peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
-                        >
-                          <span className="block font-medium">{name}</span>
-                          <span className="mt-1 block text-xs opacity-70">
-                            {time} / {cost}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Input type</Label>
-                  <RadioGroup
-                    value={worldInputType}
-                    onValueChange={(value) =>
-                      setWorldInputType(value as "text" | "image")
-                    }
-                    className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
-                  >
-                    {[
-                      ["text", "Text prompt"],
-                      ["image", "Reference image"],
-                    ].map(([value, label]) => (
-                      <div key={value} className="relative bg-[#0c0f0c]">
-                        <RadioGroupItem
-                          value={value}
-                          id={`world-${value}`}
-                          className="peer sr-only"
-                          disabled={isGenerating}
-                        />
-                        <Label
-                          htmlFor={`world-${value}`}
-                          className="block cursor-pointer p-4 text-sm transition-colors peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
-                        >
-                          {label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                {worldInputType === "text" ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="world-prompt">World prompt</Label>
-                    <Textarea
-                      id="world-prompt"
-                      placeholder="A compact product studio with concrete floors, inspection tables, and soft overhead lighting..."
-                      value={prompt}
-                      onChange={(event) => setPrompt(event.target.value)}
-                      className="min-h-36 rounded-none border-white/10 bg-black/20 text-white placeholder:text-white/28"
-                      disabled={isGenerating}
-                    />
-                  </div>
-                ) : (
-                  <ImageDropzone
-                    imagePreview={imagePreview}
-                    isGenerating={isGenerating}
-                    onDrop={handleDrop}
-                    onUpload={handleImageUpload}
-                    onRemove={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                    compact
-                  />
-                )}
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-6 border border-white/10 bg-white/[0.03] p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
-                    Before you generate
+              {worldGenerationEnabled && (
+                <TabsContent value="world" className="space-y-6">
+                  <p className="text-sm leading-6 text-white/45">
+                    Create a navigable 3D environment from a prompt or
+                    reference image. Draft worlds are faster; high-quality
+                    worlds take longer and use more credits.
                   </p>
-                  <p className="mt-1 text-sm text-white/45">
-                    Credits are reserved when generation starts and refunded
-                    automatically if it fails.
-                  </p>
-                </div>
-                <span className="font-mono text-xs text-white/45">
-                  {generationCost} credit{generationCost === 1 ? "" : "s"}
-                </span>
-              </div>
-              <div className="mt-4 divide-y divide-white/10">
-                {checklist.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-start justify-between gap-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {item.label}
-                      </p>
-                      <p className="mt-1 text-xs text-white/42">
-                        {item.detail}
-                      </p>
-                    </div>
-                    <span
-                      className={`mt-0.5 flex size-5 items-center justify-center border ${
-                        item.done
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-white/15 text-white/28"
-                      }`}
+                  <div className="space-y-3">
+                    <Label>World quality</Label>
+                    <RadioGroup
+                      value={worldModel}
+                      onValueChange={(value) =>
+                        setWorldModel(value as "mini" | "plus")
+                      }
+                      className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
                     >
-                      {item.done && <Check className="size-3" />}
-                    </span>
+                      {[
+                        ["mini", "Draft", "30-45s", "3 credits"],
+                        ["plus", "High", "~5 min", "5 credits"],
+                      ].map(([value, name, time, cost]) => (
+                        <div key={value} className="relative bg-[#0c0f0c]">
+                          <RadioGroupItem
+                            value={value}
+                            id={value}
+                            className="peer sr-only"
+                            disabled={isGenerating}
+                          />
+                          <Label
+                            htmlFor={value}
+                            className="block cursor-pointer p-4 transition-colors peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                          >
+                            <span className="block font-medium">{name}</span>
+                            <span className="mt-1 block text-xs opacity-70">
+                              {time} / {cost}
+                            </span>
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  <div className="space-y-3">
+                    <Label>Input type</Label>
+                    <RadioGroup
+                      value={worldInputType}
+                      onValueChange={(value) =>
+                        setWorldInputType(value as "text" | "image")
+                      }
+                      className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
+                    >
+                      {[
+                        ["text", "Text prompt"],
+                        ["image", "Reference image"],
+                      ].map(([value, label]) => (
+                        <div key={value} className="relative bg-[#0c0f0c]">
+                          <RadioGroupItem
+                            value={value}
+                            id={`world-${value}`}
+                            className="peer sr-only"
+                            disabled={isGenerating}
+                          />
+                          <Label
+                            htmlFor={`world-${value}`}
+                            className="block cursor-pointer p-4 text-sm transition-colors peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                          >
+                            {label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  {worldInputType === "text" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="world-prompt">World prompt</Label>
+                      <Textarea
+                        id="world-prompt"
+                        placeholder="A compact product studio with concrete floors, inspection tables, and soft overhead lighting..."
+                        value={prompt}
+                        onChange={(event) => setPrompt(event.target.value)}
+                        className="min-h-36 rounded-none border-white/10 bg-black/20 text-white placeholder:text-white/28"
+                        disabled={isGenerating}
+                      />
+                    </div>
+                  ) : (
+                    <ImageDropzone
+                      imagePreview={imagePreview}
+                      isGenerating={isGenerating}
+                      onDrop={handleDrop}
+                      onUpload={handleImageUpload}
+                      onRemove={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                      }}
+                      compact
+                    />
+                  )}
+                </TabsContent>
+              )}
+            </Tabs>
 
             <div className="mt-6 border border-white/10 bg-white/[0.03] p-4">
               <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
@@ -901,7 +844,10 @@ export default function GeneratePage() {
                     onClick={() => {
                       setPrompt(starter);
                       setMode(
-                        starter.includes("inspection bay") ? "world" : "text"
+                        starter.includes("inspection bay") &&
+                          worldGenerationEnabled
+                          ? "world"
+                          : "text"
                       );
                       trackEvent("prompt_starter_selected", {
                         starter,
@@ -942,6 +888,10 @@ export default function GeneratePage() {
             )}
 
             <div className="mt-6 space-y-3">
+              <p className="text-center text-xs leading-5 text-white/45">
+                Uses {generationCreditLabel} / refunded if generation fails /{" "}
+                {generationDurationLabel}
+              </p>
               <Button
                 className="h-12 w-full rounded-none"
                 onClick={handleGenerate}
@@ -952,7 +902,7 @@ export default function GeneratePage() {
                     <Loader2 className="size-4 animate-spin" />
                     Generating
                   </>
-                ) : mode === "world" ? (
+                ) : mode === "world" && worldGenerationEnabled ? (
                   <>
                     <Globe className="size-4" />
                     Generate 3D world ({worldModel === "mini" ? "3" : "5"}{" "}
@@ -1048,7 +998,10 @@ export default function GeneratePage() {
                 {
                   icon: Gauge,
                   label: "Quality",
-                  value: mode === "world" ? worldQualityLabel : "High",
+                  value:
+                    mode === "world" && worldGenerationEnabled
+                      ? worldQualityLabel
+                      : "High",
                 },
                 { icon: Layers3, label: "Use", value: "Web/game" },
               ].map(({ icon: MetricIcon, label, value }) => {

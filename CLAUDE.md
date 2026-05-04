@@ -14,13 +14,16 @@
 
 ## Commands
 ```bash
-npm run dev    # Local development
+npm run dev -- --port 3100  # Local development; never use port 3000 because Mission Control uses it
 npm run build  # Production build
 npm run lint   # ESLint
 ```
 
 ## Environment Variables
-(To be filled)
+- Replicate local runtime key: `REPLICATE_API_TOKEN`
+  - Source of truth in mc-vault: `creations3d-replicate-token`
+  - Do not print, paste, export, checkpoint, or write the token value into Slack, logs, repo files, or `.env` files.
+  - Firebase App Hosting uses a separate Google Secret Manager secret referenced in `apphosting.yaml`: `replicate-api-token`.
 
 ## Operational Lessons
 
@@ -30,4 +33,3 @@ npm run lint   # ESLint
 - Use AppAgentic browser/OAuth only as a fallback for UI-only actions. Avoid `joe@ruvixlabs.com`/Ruvix for AppAgentic Firebase projects unless explicitly requested.
 - Never paste secrets in Slack. Update `.env.local` locally and report only which keys were set plus validation status.
 - Future workers can use shared skill `appagentic-firebase-provisioning` for the full workflow.
-

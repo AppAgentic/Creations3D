@@ -22,12 +22,12 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Creations3D - Paid 3D asset generation studio",
   description:
-    "Generate 3D models and worlds from prompts or reference images, track credits, and save useful results to an asset library.",
+    "Generate 3D models from prompts or reference images, track credits, and save useful results to an asset library.",
   keywords: ["3D", "AI", "model generation", "text to 3D", "image to 3D"],
   openGraph: {
     title: "Creations3D",
     description:
-      "A paid 3D asset studio for prompt, image, and world generation.",
+      "A paid 3D asset studio for prompt and image generation.",
     type: "website",
   },
   twitter: {

@@ -18,6 +18,8 @@ env:
 
   # World Labs API is intentionally omitted until the production key is in
   # Secret Manager. The route fails closed and refunds reserved credits without it.
+  - variable: NEXT_PUBLIC_WORLD_GENERATION_ENABLED
+    value: "false"
 
   # Cloudflare R2 Storage
   - variable: R2_ACCOUNT_ID

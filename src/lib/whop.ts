@@ -90,7 +90,7 @@ export async function createWhopCheckout(
         product: {
           external_identifier: `creations3d-${plan.key}`,
           title: "Creations3D",
-          description: "Generate production-ready 3D models and worlds.",
+          description: "Generate production-ready 3D models.",
           collect_shipping_address: false,
         },
         internal_notes:

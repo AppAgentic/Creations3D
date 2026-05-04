@@ -30,6 +30,16 @@ export async function POST(request: NextRequest) {
   let creditCost = 0;
 
   try {
+    if (!process.env.WORLDLABS_API_KEY?.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "3D world generation is not available yet. Text and image model generation are available.",
+        },
+        { status: 503 }
+      );
+    }
+
     const user = await requireUser(request);
     userId = user.uid;
 

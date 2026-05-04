@@ -52,7 +52,7 @@ const proofPoints = [
     detail: "Fast enough to test several directions in one working session.",
   },
   {
-    value: "3",
+    value: "GLB",
     label: "primary download format",
     detail:
       "Generated models are saved and downloaded as GLB unless another format is shown as available.",
@@ -72,8 +72,8 @@ const promptExamples = [
   },
   {
     prompt: "Weathered street lantern for a compact inspection bay",
-    output: "3D world prop",
-    use: "scene preview",
+    output: "scene prop",
+    use: "environment mockup",
   },
 ];
 
@@ -84,7 +84,7 @@ const faqs = [
   ],
   [
     "What does one credit buy?",
-    "A text-to-3D or image-to-3D generation uses 1 credit. World generation uses 3 or 5 credits depending on quality.",
+    "A text-to-3D or image-to-3D model generation uses 1 credit.",
   ],
   [
     "Where do generated models go?",
@@ -132,9 +132,9 @@ export default function HomePage() {
                 Turn ideas into usable 3D assets.
               </h1>
               <p className="mt-6 max-w-xl text-xl leading-8 text-white/72 sm:text-2xl">
-                Generate product props, reference models, and 3D worlds from
-                prompts or images. Type a prompt or upload an image, spend
-                credits to generate, then save or download the result.
+                Generate product props and reference models from prompts or
+                images. Type a prompt or upload an image, spend credits to
+                generate, then save or download the result.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">

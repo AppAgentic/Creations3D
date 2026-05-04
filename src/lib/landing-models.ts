@@ -52,7 +52,7 @@ export const landingModelAssets: LandingModelAsset[] = [
     title: "Lantern",
     label: "environment prop",
     prompt: "Weathered street lantern for a compact inspection bay",
-    useCase: "Scene prop / world generation preview",
+    useCase: "Scene prop / environment mockup",
     modelUrl: `${CDN_ROOT}/Lantern/glTF-Binary/Lantern.glb`,
     previewUrl: `${CDN_ROOT}/Lantern/screenshot/screenshot.jpg`,
     scale: 1.1,

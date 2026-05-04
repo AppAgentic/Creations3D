@@ -26,10 +26,9 @@ const plans = [
     badge: "Start here",
     note: "For designers, makers, and solo creators.",
     math: "About $0.20 per text/image model generation",
-    worlds: "Up to 16 draft 3D worlds or 10 high-quality 3D worlds",
     features: [
       "50 credits per month",
-      "Text, image, and world generation",
+      "Text and image generation",
       "Saved model library",
       "GLB model downloads",
       "Email support",
@@ -47,11 +46,10 @@ const plans = [
     badge: "Best value",
     note: "For teams shipping more assets.",
     math: "About $0.13 per text/image model generation",
-    worlds: "Up to 50 draft 3D worlds or 30 high-quality 3D worlds",
     features: [
       "150 credits per month",
       "Lower per-credit generation cost",
-      "Text, image, and world generation",
+      "Text and image generation",
       "Saved model library",
       "Priority support",
     ],
@@ -69,7 +67,7 @@ const confidenceItems = [
 const pricingFaqs = [
   [
     "Which plan should I choose?",
-    "Creator is the lowest commitment. Studio is the better value if you expect to run batches or generate 3D worlds.",
+    "Creator is the lowest commitment. Studio is the better value if you expect to run batches of models.",
   ],
   [
     "Can I see the generator first?",
@@ -77,7 +75,7 @@ const pricingFaqs = [
   ],
   [
     "How are credits used?",
-    "Text-to-3D and image-to-3D use 1 credit. A 3D world is a navigable environment and uses 3 or 5 credits depending on quality.",
+    "Text-to-3D and image-to-3D model generations use 1 credit each.",
   ],
 ];
 
@@ -176,12 +174,8 @@ export default function PricingPage() {
                 "1 credit",
                 "prompt or reference to 3D model",
               ],
-              ["Draft 3D world", "3 credits", "faster environment preview"],
-              [
-                "High-quality 3D world",
-                "5 credits",
-                "larger environment generation",
-              ],
+              ["Saved library", "Included", "store useful models"],
+              ["Failed generation", "Refunded", "credit returned automatically"],
             ].map(([label, value, detail]) => (
               <div key={label} className="bg-[#0c0f0c] p-5">
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/42">
@@ -238,7 +232,7 @@ export default function PricingPage() {
                   </p>
                   <p className="flex gap-2">
                     <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-                    {plan.worlds}
+                    Credits are refunded automatically if generation fails.
                   </p>
                 </div>
 
@@ -278,7 +272,6 @@ export default function PricingPage() {
                 ["Feature", "Creator", "Studio"],
                 ["Text to 3D", "Included", "Included"],
                 ["Image to 3D", "Included", "Included"],
-                ["World generation", "3 or 5 credits", "3 or 5 credits"],
                 ["GLB downloads", "Included", "Included"],
                 ["Best for", "solo creation", "batch creation"],
               ].map((row, rowIndex) =>

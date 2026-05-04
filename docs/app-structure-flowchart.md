@@ -16,7 +16,6 @@ flowchart TD
 
   Generate --> TextMode[Text prompt mode]
   Generate --> ImageMode[Image upload mode]
-  Generate --> WorldMode[3D world mode]
 
   TextMode --> TextApi[/api/generate/text-to-3d]
   TextApi --> AuthGate[Firebase ID token check]
@@ -31,12 +30,6 @@ flowchart TD
   ImageApi --> ReplicateTrellis[Replicate TRELLIS]
   ReplicateTrellis --> ModelPreview
   ReplicateTrellis --> GenerationMeta
-
-  WorldMode --> WorldApi[/api/generate/world]
-  WorldApi --> AuthGate
-  WorldApi --> WorldLabs[World Labs Marble]
-  WorldLabs --> WorldViewer[WorldViewer iframe + exports]
-  WorldLabs --> GenerationMeta
 
   ModelPreview --> SaveModel[/api/models/save]
   SaveModel --> AuthGate
@@ -68,13 +61,16 @@ flowchart TD
 
 ## Current Completion Read
 
-The product skeleton, paid-access core, and first conversion/retention pass are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image/world generation routes, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing/search/delete, Firestore generation metadata, Studio Cockpit UI direction, landing proof/FAQ/starter prompts, pricing credit math, first-run checklist, returning-session prompts, and client analytics events.
+The product skeleton, paid-access core, and first conversion/retention pass are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image model generation routes, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing/search/delete, Firestore generation metadata, Studio Cockpit UI direction, landing proof/FAQ/starter prompts, pricing credit math, returning-session prompts, and client analytics events.
 
 It is closer to production-complete, but still needs live-provider QA and business/legal finishing before launch.
 
+World generation code remains in the repo behind `NEXT_PUBLIC_WORLD_GENERATION_ENABLED` and the `/api/generate/world` route. It is hidden from public pricing/generator copy until `WORLDLABS_API_KEY` is available.
+
 ## Key Gaps
 
-- Live QA still needed against real Firebase, Whop, Replicate, World Labs, and R2 credentials.
+- Live QA still needed against real Firebase, Whop, Replicate, and R2 credentials.
+- WorldLabs key/setup is still needed before exposing world generation.
 - Whop metadata shape should be confirmed in production webhooks; the handler now reads several common Firebase UID metadata locations.
 - Rename, version history UI, and true multi-format export conversion are not implemented.
 - Privacy, terms, and support placeholder pages exist, but legal copy and production support contact still need owner review.
