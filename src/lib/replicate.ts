@@ -1,4 +1,4 @@
-import Replicate from "replicate";
+import Replicate, { type Prediction } from "replicate";
 
 // Initialize Replicate client
 // In Firebase App Hosting, env vars are auto-injected via apphosting.yaml
@@ -6,6 +6,15 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
   fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
 });
+
+const SHAPE_E_VERSION =
+  "5957069d5c509126a73c7cb68abcddbb985aeefa4d318e7c63ec1352ce6da68c";
+const SHAPE_E_INPUT_DEFAULTS = {
+  guidance_scale: 15,
+  render_mode: "nerf",
+  render_size: 256,
+  save_mesh: true,
+};
 
 export interface TextTo3DInput {
   prompt: string;
@@ -21,46 +30,148 @@ export interface GenerationResult {
   previewUrl?: string;
 }
 
+export interface PredictionStart {
+  predictionId: string;
+  status: Prediction["status"];
+}
+
+export interface PredictionStatusResult {
+  status: Prediction["status"];
+  modelUrl?: string;
+  format?: string;
+  error?: string;
+}
+
+function findOutputUrl(output: unknown): string {
+  if (!output) return "";
+
+  if (typeof output === "string") {
+    return output;
+  }
+
+  if (Array.isArray(output)) {
+    for (const item of output) {
+      const url = findOutputUrl(item);
+      if (url) return url;
+    }
+    return "";
+  }
+
+  if (typeof output === "object") {
+    const record = output as Record<string, unknown>;
+    const urlValue = record.url;
+
+    if (typeof urlValue === "string") {
+      return urlValue;
+    }
+
+    if (urlValue instanceof URL) {
+      return urlValue.toString();
+    }
+
+    if (typeof urlValue === "function") {
+      const url = (urlValue as () => URL | string).call(output);
+      return url instanceof URL ? url.toString() : String(url);
+    }
+
+    const text = output.toString();
+    if (text.startsWith("http") || text.startsWith("data:")) {
+      return text;
+    }
+
+    for (const key of ["mesh", "model", "glb", "obj", "output"]) {
+      const url = findOutputUrl(record[key]);
+      if (url) return url;
+    }
+
+    for (const value of Object.values(record)) {
+      const url = findOutputUrl(value);
+      if (url) return url;
+    }
+  }
+
+  return "";
+}
+
+function getFormatFromUrl(modelUrl: string) {
+  const lower = modelUrl.toLowerCase();
+  return lower.includes(".obj") ? "obj" : "glb";
+}
+
 // Text to 3D using Shap-E model
 // Model: cjwbw/shap-e - generates 3D from text prompts
 // Cost: ~$0.09 per run
-export async function textTo3D(input: TextTo3DInput): Promise<GenerationResult> {
-  const output = await replicate.run(
-    "cjwbw/shap-e:5957069d5c509126a73c7cb68abcddbb985aeefa4d318e7c63ec1352ce6da68c",
-    {
-      input: {
-        prompt: input.prompt,
-        guidance_scale: 15,
-        render_mode: "nerf",
-        render_size: 256,
-        save_mesh: true,
-      },
-    }
-  );
+export async function textTo3D(
+  input: TextTo3DInput
+): Promise<GenerationResult> {
+  const output = await replicate.run(`cjwbw/shap-e:${SHAPE_E_VERSION}`, {
+    input: {
+      prompt: input.prompt,
+      ...SHAPE_E_INPUT_DEFAULTS,
+    },
+  });
 
-  // Shap-E returns an object with mesh file
-  const result = output as { mesh?: string } | string[];
-  let modelUrl: string;
-
-  if (Array.isArray(result)) {
-    // Find the GLB/OBJ file in the output array
-    modelUrl = result.find((url) => url.endsWith(".glb") || url.endsWith(".obj")) || result[0];
-  } else if (typeof result === "object" && result.mesh) {
-    modelUrl = result.mesh;
-  } else {
-    modelUrl = result as unknown as string;
-  }
+  const modelUrl = findOutputUrl(output);
 
   return {
     modelUrl,
-    format: modelUrl.endsWith(".obj") ? "obj" : "glb",
+    format: getFormatFromUrl(modelUrl),
+  };
+}
+
+export async function createTextTo3DPrediction(
+  input: TextTo3DInput
+): Promise<PredictionStart> {
+  const prediction = await replicate.predictions.create({
+    version: SHAPE_E_VERSION,
+    input: {
+      prompt: input.prompt,
+      ...SHAPE_E_INPUT_DEFAULTS,
+    },
+  });
+
+  return {
+    predictionId: prediction.id,
+    status: prediction.status,
+  };
+}
+
+export async function getTextTo3DPredictionResult(
+  predictionId: string
+): Promise<PredictionStatusResult> {
+  const prediction = await replicate.predictions.get(predictionId);
+
+  if (prediction.status === "succeeded") {
+    const modelUrl = findOutputUrl(prediction.output);
+
+    return {
+      status: prediction.status,
+      modelUrl,
+      format: getFormatFromUrl(modelUrl),
+    };
+  }
+
+  if (prediction.status === "failed" || prediction.status === "canceled") {
+    return {
+      status: prediction.status,
+      error:
+        typeof prediction.error === "string"
+          ? prediction.error
+          : "Prediction did not complete.",
+    };
+  }
+
+  return {
+    status: prediction.status,
   };
 }
 
 // Image to 3D using TRELLIS model (recommended)
 // Model: firtoz/trellis - powerful 3D asset generation, 599K+ runs
 // Cost: ~$0.08 per run
-export async function imageTo3D(input: ImageTo3DInput): Promise<GenerationResult> {
+export async function imageTo3D(
+  input: ImageTo3DInput
+): Promise<GenerationResult> {
   const output = await replicate.run(
     "firtoz/trellis:e8f6c45206993f297372f5436b90350817bd9b4a0d52d2a76df50c1c8afa2b3c",
     {
@@ -91,15 +202,14 @@ export async function imageTo3D(input: ImageTo3DInput): Promise<GenerationResult
 
 // Alternative: Image to 3D using Hunyuan3D (high quality)
 // Model: prunaai/hunyuan3d-2
-export async function imageTo3DHunyuan(input: ImageTo3DInput): Promise<GenerationResult> {
-  const output = await replicate.run(
-    "prunaai/hunyuan3d-2",
-    {
-      input: {
-        image: input.imageUrl,
-      },
-    }
-  );
+export async function imageTo3DHunyuan(
+  input: ImageTo3DInput
+): Promise<GenerationResult> {
+  const output = await replicate.run("prunaai/hunyuan3d-2", {
+    input: {
+      image: input.imageUrl,
+    },
+  });
 
   const result = output as { glb?: string } | string;
   const modelUrl = typeof result === "object" ? result.glb || "" : result;
@@ -129,7 +239,10 @@ export async function getPredictionStatus(predictionId: string) {
 }
 
 // Wait for prediction to complete
-export async function waitForPrediction(predictionId: string, maxWaitMs = 120000) {
+export async function waitForPrediction(
+  predictionId: string,
+  maxWaitMs = 120000
+) {
   const startTime = Date.now();
 
   while (Date.now() - startTime < maxWaitMs) {

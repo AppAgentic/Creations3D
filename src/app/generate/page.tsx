@@ -220,6 +220,42 @@ export default function GeneratePage() {
     reader.readAsDataURL(file);
   };
 
+  const pollGenerationStatus = async (id: string, token: string) => {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 3000));
+      setProgress((current) => Math.min(95, Math.max(current, 18 + attempt)));
+
+      const response = await fetch(
+        `/api/generate/status?generationId=${encodeURIComponent(id)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Generation status check failed");
+      }
+
+      if (data.status === "generated" && data.modelUrl) {
+        return data;
+      }
+
+      if (data.status === "failed") {
+        throw new Error(
+          data.error ||
+            "We couldn't generate that model. Your credit was refunded automatically."
+        );
+      }
+    }
+
+    throw new Error(
+      "That generation is taking longer than expected. Check your library in a moment or try again."
+    );
+  };
+
   const handleGenerate = async () => {
     if (!(await ensureCanGenerate())) return;
 
@@ -294,6 +330,27 @@ export default function GeneratePage() {
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate model");
+      }
+
+      if (data.status === "processing" && data.generationId) {
+        setGenerationId(data.generationId);
+        trackEvent("generation_processing", {
+          mode,
+          generationId: data.generationId,
+          creditsUsed: data.creditsUsed || getGenerationCost(),
+        });
+        const completed = await pollGenerationStatus(data.generationId, token);
+        setProgress(100);
+        setModelUrl(completed.modelUrl);
+        setGenerationId(completed.generationId || data.generationId);
+        trackEvent("generation_completed", {
+          mode,
+          generationId: completed.generationId || data.generationId,
+          creditsUsed: data.creditsUsed || getGenerationCost(),
+        });
+        await reloadCredits();
+        toast.success("3D model generated");
+        return;
       }
 
       setProgress(100);
@@ -734,9 +791,9 @@ export default function GeneratePage() {
               {worldGenerationEnabled && (
                 <TabsContent value="world" className="space-y-6">
                   <p className="text-sm leading-6 text-white/45">
-                    Create a navigable 3D environment from a prompt or
-                    reference image. Draft worlds are faster; high-quality
-                    worlds take longer and use more credits.
+                    Create a navigable 3D environment from a prompt or reference
+                    image. Draft worlds are faster; high-quality worlds take
+                    longer and use more credits.
                   </p>
                   <div className="space-y-3">
                     <Label>World quality</Label>

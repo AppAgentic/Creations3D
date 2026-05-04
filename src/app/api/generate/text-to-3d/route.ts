@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { textTo3D } from "@/lib/replicate";
+import { createTextTo3DPrediction } from "@/lib/replicate";
 import {
   InsufficientCreditsError,
   refundCredits,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/generation-records";
 import { adminDb } from "@/lib/firebase-admin";
 import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
-import { FieldValue } from "firebase-admin/firestore";
 
 const CREDIT_COST = 1;
 
@@ -64,27 +63,24 @@ export async function POST(request: NextRequest) {
       input: { promptLength: prompt.length },
     });
 
-    const result = await textTo3D({ prompt });
-
-    if (!result.modelUrl) {
-      throw new Error("Failed to generate model - no output received");
-    }
+    const prediction = await createTextTo3DPrediction({ prompt });
 
     await updateGenerationRecord(generationId, {
-      status: "generated",
-      modelUrl: result.modelUrl,
-      format: result.format,
-      completedAt: FieldValue.serverTimestamp(),
+      predictionId: prediction.predictionId,
+      providerStatus: prediction.status,
     });
 
-    return NextResponse.json({
-      success: true,
-      generationId,
-      modelUrl: result.modelUrl,
-      format: result.format,
-      creditsUsed: CREDIT_COST,
-      remainingCredits: creditReservation.remainingCredits,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        status: "processing",
+        generationId,
+        predictionId: prediction.predictionId,
+        creditsUsed: CREDIT_COST,
+        remainingCredits: creditReservation.remainingCredits,
+      },
+      { status: 202 }
+    );
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json(
