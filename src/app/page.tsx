@@ -4,6 +4,10 @@ import { Navbar } from "@/components/Navbar";
 import { LandingModelShowcase } from "@/components/LandingModelShowcase";
 import { TrackedLink } from "@/components/TrackedLink";
 import { landingModelAssets } from "@/lib/landing-models";
+import {
+  IMAGE_TO_3D_CREDIT_COST,
+  TEXT_TO_3D_CREDIT_COST,
+} from "@/lib/generation-costs";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -42,9 +46,14 @@ const workflow = [
 
 const proofPoints = [
   {
-    value: "1",
-    label: "credit per text or image model",
-    detail: "No mystery spend at the moment of creation.",
+    value: `${TEXT_TO_3D_CREDIT_COST}`,
+    label: "credits for premium text models",
+    detail: "Higher-quality runs cost more than quick drafts.",
+  },
+  {
+    value: `${IMAGE_TO_3D_CREDIT_COST}`,
+    label: "credits for image models",
+    detail: "Reference-image runs use fewer credits.",
   },
   {
     value: "2-4m",
@@ -55,7 +64,7 @@ const proofPoints = [
     value: "GLB",
     label: "primary download format",
     detail:
-      "Generated models are saved and downloaded in the available provider format.",
+      "Generated models are saved and downloaded in the available output format.",
   },
 ];
 
@@ -84,7 +93,7 @@ const faqs = [
   ],
   [
     "What does one credit buy?",
-    "A text-to-3D or image-to-3D model generation uses 1 credit.",
+    "Credits buy generation work. Premium text-to-3D uses 8 credits, image-to-3D uses 2 credits, and the app shows the cost before each run.",
   ],
   [
     "Where do generated models go?",
@@ -167,7 +176,7 @@ export default function HomePage() {
               <div className="mt-7 flex flex-wrap gap-3 text-sm text-white/55">
                 {[
                   "No free tier",
-                  "1 credit text/image models",
+                  "Credit cost shown up front",
                   "Library included",
                 ].map((item) => (
                   <span key={item} className="inline-flex items-center gap-2">
@@ -224,7 +233,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-4">
               {proofPoints.map((point) => (
                 <div key={point.label} className="bg-[#0c0f0c] p-6">
                   <p className="font-mono text-5xl text-white">{point.value}</p>

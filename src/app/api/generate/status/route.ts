@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         status: "failed",
         generationId,
         error:
-          "We couldn't generate that model. Your credit was refunded automatically.",
+          "We couldn't generate that model. Reserved credits were refunded automatically.",
       });
     }
 
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
         status: "failed",
         generationId,
         error:
-          "We couldn't generate that model. Your credit was refunded automatically.",
+          "We couldn't generate that model. Reserved credits were refunded automatically.",
       });
     }
 

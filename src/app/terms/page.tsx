@@ -25,9 +25,9 @@ export default function TermsPage() {
             right to use.
           </p>
           <p>
-            Generation availability can depend on third-party providers
-            including Replicate. Failed generation jobs should be refunded
-            automatically when the server receives a provider error.
+            Generation availability can depend on third-party services. Failed
+            generation jobs should be refunded automatically when the server
+            receives a generation error.
           </p>
           <p>
             Paid subscriptions and checkout are managed by Whop. Plan access,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
+import { PLAN_CREDIT_COUNTS } from "@/lib/generation-costs";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import crypto from "crypto";
 
@@ -19,10 +20,10 @@ const INACTIVE_MEMBERSHIP_EVENTS = new Set([
 ]);
 
 const PLAN_CREDITS: Record<string, number> = {
-  basic: 50,
-  creator: 50,
-  pro: 150,
-  studio: 150,
+  basic: PLAN_CREDIT_COUNTS.creator,
+  creator: PLAN_CREDIT_COUNTS.creator,
+  pro: PLAN_CREDIT_COUNTS.studio,
+  studio: PLAN_CREDIT_COUNTS.studio,
 };
 
 type WhopEvent = {
@@ -488,10 +489,14 @@ async function handlePaymentSucceeded(
 
   if (!credits && productName.includes("10 credits")) {
     credits = 10;
+  } else if (!credits && productName.includes("40 credits")) {
+    credits = 40;
   } else if (!credits && productName.includes("50 credits")) {
     credits = 50;
   } else if (!credits && productName.includes("100 credits")) {
     credits = 100;
+  } else if (!credits && productName.includes("120 credits")) {
+    credits = 120;
   }
 
   if (!credits) {

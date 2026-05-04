@@ -10,11 +10,12 @@ import {
   markGenerationFailed,
   updateGenerationRecord,
 } from "@/lib/generation-records";
+import { IMAGE_TO_3D_CREDIT_COST } from "@/lib/generation-costs";
 import { adminDb } from "@/lib/firebase-admin";
 import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
 import { FieldValue } from "firebase-admin/firestore";
 
-const CREDIT_COST = 1;
+const CREDIT_COST = IMAGE_TO_3D_CREDIT_COST;
 
 export const maxDuration = 300;
 
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "We couldn't generate that 3D model from the image. Your credit was refunded automatically. Try a clearer image or contact support if it keeps happening.",
+          "We couldn't generate that 3D model from the image. Reserved credits were refunded automatically. Try a clearer image or contact support if it keeps happening.",
       },
       { status: 500 }
     );

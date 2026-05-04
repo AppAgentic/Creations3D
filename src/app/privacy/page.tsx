@@ -21,8 +21,8 @@ export default function PrivacyPage() {
           </p>
           <p>
             Generated model files may be stored in Cloudflare R2. Authentication
-            is handled by Firebase, payments by Whop, object generation by
-            Replicate.
+            is handled by Firebase, payments by Whop, and model generation by
+            third-party generation infrastructure.
           </p>
           <p>
             We do not sell customer generation prompts or account data. Users

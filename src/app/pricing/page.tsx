@@ -5,6 +5,12 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
+import {
+  IMAGE_TO_3D_CREDIT_COST,
+  PLAN_CREDIT_COUNTS,
+  PLAN_PRICES_USD,
+  TEXT_TO_3D_CREDIT_COST,
+} from "@/lib/generation-costs";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -19,15 +25,17 @@ const plans = [
   {
     id: "creator",
     name: "Creator",
-    price: "$9.99",
+    price: `$${PLAN_PRICES_USD.creator}`,
     period: "/month",
-    credits: "50",
-    creditCount: 50,
+    credits: `${PLAN_CREDIT_COUNTS.creator}`,
+    creditCount: PLAN_CREDIT_COUNTS.creator,
     badge: "Start here",
     note: "For designers, makers, and solo creators.",
-    math: "About $0.20 per text/image model generation",
+    math: "Up to 5 premium text models or 20 image models",
     features: [
-      "50 credits per month",
+      "40 credits per month",
+      "Premium text-to-3D uses 8 credits",
+      "Image-to-3D uses 2 credits",
       "Text and image generation",
       "Saved model library",
       "Model downloads",
@@ -39,16 +47,18 @@ const plans = [
   {
     id: "studio",
     name: "Studio",
-    price: "$19.99",
+    price: `$${PLAN_PRICES_USD.studio}`,
     period: "/month",
-    credits: "150",
-    creditCount: 150,
+    credits: `${PLAN_CREDIT_COUNTS.studio}`,
+    creditCount: PLAN_CREDIT_COUNTS.studio,
     badge: "Best value",
     note: "For teams shipping more assets.",
-    math: "About $0.13 per text/image model generation",
+    math: "Up to 15 premium text models or 60 image models",
     features: [
-      "150 credits per month",
+      "120 credits per month",
       "Lower per-credit generation cost",
+      "Premium text-to-3D uses 8 credits",
+      "Image-to-3D uses 2 credits",
       "Text and image generation",
       "Saved model library",
       "Priority support",
@@ -75,7 +85,7 @@ const pricingFaqs = [
   ],
   [
     "How are credits used?",
-    "Text-to-3D and image-to-3D model generations use 1 credit each.",
+    "Premium text-to-3D uses 8 credits. Image-to-3D uses 2 credits. World generation shows its credit cost before you run it.",
   ],
 ];
 
@@ -167,18 +177,23 @@ export default function PricingPage() {
             </div>
           </header>
 
-          <section className="mt-8 grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+          <section className="mt-8 grid gap-px border border-white/10 bg-white/10 md:grid-cols-4">
             {[
               [
-                "Text or image model",
-                "1 credit",
-                "prompt or reference to 3D model",
+                "Premium text model",
+                `${TEXT_TO_3D_CREDIT_COST} credits`,
+                "prompt to high-quality 3D model",
+              ],
+              [
+                "Image model",
+                `${IMAGE_TO_3D_CREDIT_COST} credits`,
+                "reference image to 3D model",
               ],
               ["Saved library", "Included", "store useful models"],
               [
                 "Failed generation",
                 "Refunded",
-                "credit returned automatically",
+                "reserved credits returned automatically",
               ],
             ].map(([label, value, detail]) => (
               <div key={label} className="bg-[#0c0f0c] p-5">
@@ -274,8 +289,8 @@ export default function PricingPage() {
             <div className="grid gap-px bg-white/10 md:grid-cols-3">
               {[
                 ["Feature", "Creator", "Studio"],
-                ["Text to 3D", "Included", "Included"],
-                ["Image to 3D", "Included", "Included"],
+                ["Premium text-to-3D", "5 runs/month", "15 runs/month"],
+                ["Image-to-3D", "20 runs/month", "60 runs/month"],
                 ["Model downloads", "Included", "Included"],
                 ["Best for", "solo creation", "batch creation"],
               ].map((row, rowIndex) =>

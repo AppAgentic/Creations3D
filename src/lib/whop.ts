@@ -1,4 +1,5 @@
 import Whop from "@whop/sdk";
+import { PLAN_CREDIT_COUNTS, PLAN_PRICES_USD } from "@/lib/generation-costs";
 
 type PlanKey = "creator" | "studio";
 
@@ -14,16 +15,16 @@ export const WHOP_CHECKOUT_PLANS: Record<PlanKey, WhopCheckoutPlan> = {
   creator: {
     key: "creator",
     title: "Creations3D Creator",
-    priceUsd: 9.99,
-    credits: 50,
-    description: "Monthly Creations3D plan with 50 generation credits.",
+    priceUsd: PLAN_PRICES_USD.creator,
+    credits: PLAN_CREDIT_COUNTS.creator,
+    description: "Monthly Creations3D plan with 40 generation credits.",
   },
   studio: {
     key: "studio",
     title: "Creations3D Studio",
-    priceUsd: 19.99,
-    credits: 150,
-    description: "Monthly Creations3D plan with 150 generation credits.",
+    priceUsd: PLAN_PRICES_USD.studio,
+    credits: PLAN_CREDIT_COUNTS.studio,
+    description: "Monthly Creations3D plan with 120 generation credits.",
   },
 };
 

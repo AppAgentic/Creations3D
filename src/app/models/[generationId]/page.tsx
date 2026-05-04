@@ -238,7 +238,7 @@ export default function ModelDetailPage() {
                   {[
                     ["Created", formatDate(model.createdAt), Clock],
                     ["Credits used", `${model.creditsUsed || 0}`, Sparkles],
-                    ["Provider", model.providerModel || "Replicate", Layers3],
+                    ["Generation", "Premium 3D model", Layers3],
                     ["Format", getModelFileLabel(model.format), FileArchive],
                   ].map(([label, value, Icon]) => {
                     const MetricIcon = Icon as typeof Clock;

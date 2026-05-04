@@ -8,6 +8,12 @@ import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
 import { worldGenerationEnabled } from "@/lib/features";
+import {
+  IMAGE_TO_3D_CREDIT_COST,
+  TEXT_TO_3D_CREDIT_COST,
+  WORLD_DRAFT_CREDIT_COST,
+  WORLD_HIGH_CREDIT_COST,
+} from "@/lib/generation-costs";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -149,8 +155,12 @@ export default function GeneratePage() {
   };
 
   const getGenerationCost = () => {
-    if (mode !== "world" || !worldGenerationEnabled) return 1;
-    return worldModel === "mini" ? 3 : 5;
+    if (mode === "text") return TEXT_TO_3D_CREDIT_COST;
+    if (mode === "image") return IMAGE_TO_3D_CREDIT_COST;
+    if (!worldGenerationEnabled) return TEXT_TO_3D_CREDIT_COST;
+    return worldModel === "mini"
+      ? WORLD_DRAFT_CREDIT_COST
+      : WORLD_HIGH_CREDIT_COST;
   };
 
   const ensureCanGenerate = async () => {
@@ -244,7 +254,7 @@ export default function GeneratePage() {
       if (data.status === "failed") {
         throw new Error(
           data.error ||
-            "We couldn't generate that model. Your credit was refunded automatically."
+            "We couldn't generate that model. Reserved credits were refunded automatically."
         );
       }
     }
@@ -374,7 +384,7 @@ export default function GeneratePage() {
     } catch (error) {
       const message = getFriendlyError(
         error,
-        "We couldn't generate that model. If a credit was reserved, it was refunded automatically. Try again with a simpler prompt."
+        "We couldn't generate that model. If credits were reserved, they were refunded automatically. Try again with a simpler prompt."
       );
       toast.error(message);
       trackEvent("generation_failed", { mode, message });
@@ -571,9 +581,7 @@ export default function GeneratePage() {
       : "--";
   const generationCost = getGenerationCost();
   const hasKnownCredits = typeof creditState?.credits === "number";
-  const generationCreditLabel = `${generationCost} credit${
-    generationCost === 1 ? "" : "s"
-  }`;
+  const generationCreditLabel = `${generationCost} credits`;
   const generationDurationLabel =
     mode === "world" && worldGenerationEnabled
       ? worldModel === "mini"
@@ -668,7 +676,7 @@ export default function GeneratePage() {
                       detail="Add a prompt or reference image, then generate to see the real output. The preview stays empty until your model is ready."
                       steps={[
                         "Write a prompt",
-                        "Generate with 1 credit",
+                        "Generate with credits",
                         "Save or download",
                       ]}
                     />
@@ -758,8 +766,8 @@ export default function GeneratePage() {
                     disabled={isGenerating}
                   />
                   <p className="text-sm leading-6 text-white/45">
-                    Include material, scale, silhouette, and target use for a
-                    cleaner first model.
+                    Premium text generation uses 8 credits. Include material,
+                    scale, silhouette, and target use for a cleaner first model.
                   </p>
                 </div>
               </TabsContent>
@@ -794,8 +802,18 @@ export default function GeneratePage() {
                       className="grid grid-cols-2 gap-px border border-white/10 bg-white/10"
                     >
                       {[
-                        ["mini", "Draft", "30-45s", "3 credits"],
-                        ["plus", "High", "~5 min", "5 credits"],
+                        [
+                          "mini",
+                          "Draft",
+                          "30-45s",
+                          `${WORLD_DRAFT_CREDIT_COST} credits`,
+                        ],
+                        [
+                          "plus",
+                          "High",
+                          "~5 min",
+                          `${WORLD_HIGH_CREDIT_COST} credits`,
+                        ],
                       ].map(([value, name, time, cost]) => (
                         <div key={value} className="relative bg-[#0c0f0c]">
                           <RadioGroupItem
@@ -930,8 +948,8 @@ export default function GeneratePage() {
 
             <div className="mt-6 space-y-3">
               <p className="text-center text-xs leading-5 text-white/45">
-                Uses {generationCreditLabel}. If generation fails, the credit
-                returns automatically. {generationDurationLabel}.
+                Uses {generationCreditLabel}. If generation fails, reserved
+                credits return automatically. {generationDurationLabel}.
               </p>
               <Button
                 className="h-12 w-full rounded-none"
@@ -946,8 +964,7 @@ export default function GeneratePage() {
                 ) : mode === "world" && worldGenerationEnabled ? (
                   <>
                     <Globe className="size-4" />
-                    Generate 3D world ({worldModel === "mini" ? "3" : "5"}{" "}
-                    credits)
+                    Generate 3D world ({generationCreditLabel})
                   </>
                 ) : !user ? (
                   <>
@@ -957,7 +974,7 @@ export default function GeneratePage() {
                 ) : (
                   <>
                     <Sparkles className="size-4" />
-                    Generate 3D model (1 credit)
+                    Generate 3D model ({generationCreditLabel})
                   </>
                 )}
               </Button>

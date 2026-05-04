@@ -13,10 +13,11 @@ import {
   markGenerationFailed,
   updateGenerationRecord,
 } from "@/lib/generation-records";
+import { TEXT_TO_3D_CREDIT_COST } from "@/lib/generation-costs";
 import { adminDb } from "@/lib/firebase-admin";
 import { AuthError, getErrorMessage, requireUser } from "@/lib/server-auth";
 
-const CREDIT_COST = 1;
+const CREDIT_COST = TEXT_TO_3D_CREDIT_COST;
 
 export const maxDuration = 300;
 
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "We couldn't generate that 3D model. Your credit was refunded automatically. Try again with a simpler prompt or contact support if it keeps happening.",
+          "We couldn't generate that 3D model. Reserved credits were refunded automatically. Try again with a simpler prompt or contact support if it keeps happening.",
       },
       { status: 500 }
     );
