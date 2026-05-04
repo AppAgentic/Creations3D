@@ -33,9 +33,9 @@ const workflow = [
     icon: FileImage,
   },
   {
-    label: "Download GLB",
+    label: "Download model",
     detail:
-      "Save useful results to your library, then download a GLB for web, games, or 3D tools.",
+      "Save useful results to your library, then download the available model file for web, games, or 3D tools.",
     icon: Download,
   },
 ];
@@ -52,10 +52,10 @@ const proofPoints = [
     detail: "Fast enough to test several directions in one working session.",
   },
   {
-    value: "GLB",
+    value: "GLB/OBJ",
     label: "primary download format",
     detail:
-      "Generated models are saved and downloaded as GLB unless another format is shown as available.",
+      "Generated models are saved and downloaded in the format returned by the model provider.",
   },
 ];
 
@@ -363,7 +363,7 @@ export default function HomePage() {
               <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
                 {[
                   ["47.2s", "median model generation"],
-                  ["GLB", "primary download"],
+                  ["GLB/OBJ", "model download"],
                   ["Auto", "detail target"],
                 ].map(([value, label]) => (
                   <div key={label} className="bg-[#0c0f0c] p-6">

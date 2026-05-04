@@ -30,7 +30,7 @@ const plans = [
       "50 credits per month",
       "Text and image generation",
       "Saved model library",
-      "GLB model downloads",
+      "Model downloads",
       "Email support",
     ],
     cta: "Choose Creator",
@@ -175,7 +175,11 @@ export default function PricingPage() {
                 "prompt or reference to 3D model",
               ],
               ["Saved library", "Included", "store useful models"],
-              ["Failed generation", "Refunded", "credit returned automatically"],
+              [
+                "Failed generation",
+                "Refunded",
+                "credit returned automatically",
+              ],
             ].map(([label, value, detail]) => (
               <div key={label} className="bg-[#0c0f0c] p-5">
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/42">
@@ -272,7 +276,7 @@ export default function PricingPage() {
                 ["Feature", "Creator", "Studio"],
                 ["Text to 3D", "Included", "Included"],
                 ["Image to 3D", "Included", "Included"],
-                ["GLB downloads", "Included", "Included"],
+                ["Model downloads", "Included", "Included"],
                 ["Best for", "solo creation", "batch creation"],
               ].map((row, rowIndex) =>
                 row.map((cell, cellIndex) => (

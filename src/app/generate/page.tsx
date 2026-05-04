@@ -74,6 +74,7 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [modelUrl, setModelUrl] = useState<string | null>(null);
+  const [modelFormat, setModelFormat] = useState("glb");
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
@@ -342,6 +343,7 @@ export default function GeneratePage() {
         const completed = await pollGenerationStatus(data.generationId, token);
         setProgress(100);
         setModelUrl(completed.modelUrl);
+        setModelFormat(completed.format || "glb");
         setGenerationId(completed.generationId || data.generationId);
         trackEvent("generation_completed", {
           mode,
@@ -355,6 +357,7 @@ export default function GeneratePage() {
 
       setProgress(100);
       setModelUrl(data.modelUrl);
+      setModelFormat(data.format || "glb");
       setGenerationId(data.generationId || null);
       trackEvent("generation_completed", {
         mode,
@@ -510,7 +513,7 @@ export default function GeneratePage() {
         },
         body: JSON.stringify({
           modelUrl,
-          format: "glb",
+          format: modelFormat,
           generationId,
         }),
       });
@@ -547,6 +550,7 @@ export default function GeneratePage() {
     setImageFile(null);
     setImagePreview(null);
     setModelUrl(null);
+    setModelFormat("glb");
     setProgress(0);
     setIsSaved(false);
     setSavedUrl(null);
@@ -627,7 +631,7 @@ export default function GeneratePage() {
                   Credits {displayedCredits}
                 </span>
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  GLB download
+                  Model download
                 </span>
                 <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
                   Library save
@@ -675,7 +679,7 @@ export default function GeneratePage() {
                     />
                   ) : modelUrl ? (
                     <div className="h-full min-h-[34rem] overflow-hidden border border-white/10">
-                      <ModelViewer modelUrl={modelUrl} />
+                      <ModelViewer modelUrl={modelUrl} format={modelFormat} />
                     </div>
                   ) : (
                     <EmptyViewport
@@ -1033,9 +1037,12 @@ export default function GeneratePage() {
                         className="rounded-none border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.07] hover:text-white"
                         asChild
                       >
-                        <a href={savedUrl || modelUrl} download="model.glb">
+                        <a
+                          href={savedUrl || modelUrl}
+                          download={`model.${modelFormat}`}
+                        >
                           <Download className="size-4" />
-                          GLB
+                          {modelFormat.toUpperCase()}
                         </a>
                       </Button>
                     </div>

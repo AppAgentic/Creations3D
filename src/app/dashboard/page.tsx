@@ -331,9 +331,18 @@ export default function DashboardPage() {
                   <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
                     Saved
                   </span>
-                  <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                    GLB
-                  </span>
+                  {Array.from(
+                    new Set(models.map((model) => model.format.toUpperCase()))
+                  )
+                    .slice(0, 2)
+                    .map((format) => (
+                      <span
+                        key={format}
+                        className="border border-white/10 bg-white/[0.03] px-3 py-2"
+                      >
+                        {format}
+                      </span>
+                    ))}
                 </div>
               </div>
 
@@ -526,7 +535,9 @@ export default function DashboardPage() {
                   Downloads
                 </p>
                 <div className="mt-5 divide-y divide-white/10">
-                  {["GLB"].map((format) => (
+                  {Array.from(
+                    new Set(models.map((model) => model.format.toUpperCase()))
+                  ).map((format) => (
                     <div
                       key={format}
                       className="flex items-center justify-between py-4 text-sm"
@@ -578,7 +589,10 @@ export default function DashboardPage() {
           <div className="min-h-0 flex-1">
             {selectedModel && (
               <div className="h-[calc(82vh-104px)] overflow-hidden border border-white/10">
-                <ModelViewer modelUrl={selectedModel.url} />
+                <ModelViewer
+                  modelUrl={selectedModel.url}
+                  format={selectedModel.format}
+                />
               </div>
             )}
           </div>

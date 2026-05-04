@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
         providerStatus: result.status,
         modelUrl: result.modelUrl,
         format: result.format,
+        previewUrl: result.previewUrl || null,
         completedAt: FieldValue.serverTimestamp(),
       });
 
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
         generationId,
         modelUrl: result.modelUrl,
         format: result.format,
+        previewUrl: result.previewUrl || null,
       });
     }
 

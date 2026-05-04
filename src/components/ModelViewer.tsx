@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Suspense, useRef, useEffect, useMemo } from "react";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
   Environment,
@@ -12,29 +12,70 @@ import {
   useProgress,
 } from "@react-three/drei";
 import * as THREE from "three";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { Loader2 } from "lucide-react";
+
+type ModelFormat = "glb" | "gltf" | "obj";
 
 interface ModelProps {
   url: string;
+  format?: ModelFormat | string | null;
   onLoad?: () => void;
 }
 
-function Model({ url, onLoad }: ModelProps) {
-  const { scene } = useGLTF(url);
+function getModelFormat(
+  url: string,
+  explicitFormat?: string | null
+): ModelFormat {
+  const explicit = explicitFormat?.toLowerCase();
+  if (explicit === "obj") return "obj";
+  if (explicit === "gltf") return "gltf";
+
+  try {
+    const extension = new URL(url).pathname.split(".").pop()?.toLowerCase();
+    if (extension === "obj") return "obj";
+    if (extension === "gltf") return "gltf";
+  } catch {
+    const extension = url.split("?")[0].split(".").pop()?.toLowerCase();
+    if (extension === "obj") return "obj";
+    if (extension === "gltf") return "gltf";
+  }
+
+  return "glb";
+}
+
+function PreparedModel({
+  source,
+  onLoad,
+}: {
+  source: THREE.Object3D;
+  onLoad?: () => void;
+}) {
+  const scene = useMemo(() => source.clone(true), [source]);
   const modelRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
     if (scene) {
-      // Center and scale the model
       const box = new THREE.Box3().setFromObject(scene);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
-
       const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 2 / maxDim;
 
-      scene.position.sub(center);
-      scene.scale.setScalar(scale);
+      if (maxDim > 0) {
+        const scale = 2 / maxDim;
+        scene.position.sub(center);
+        scene.scale.setScalar(scale);
+      }
+
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh && !child.material) {
+          child.material = new THREE.MeshStandardMaterial({
+            color: "#c9ff38",
+            roughness: 0.55,
+            metalness: 0.08,
+          });
+        }
+      });
 
       onLoad?.();
     }
@@ -55,6 +96,26 @@ function Model({ url, onLoad }: ModelProps) {
   );
 }
 
+function Model({ url, format, onLoad }: ModelProps) {
+  const resolvedFormat = getModelFormat(url, format);
+
+  if (resolvedFormat === "obj") {
+    return <ObjModel url={url} onLoad={onLoad} />;
+  }
+
+  return <GltfModel url={url} onLoad={onLoad} />;
+}
+
+function GltfModel({ url, onLoad }: ModelProps) {
+  const { scene } = useGLTF(url);
+  return <PreparedModel source={scene} onLoad={onLoad} />;
+}
+
+function ObjModel({ url, onLoad }: ModelProps) {
+  const object = useLoader(OBJLoader, url);
+  return <PreparedModel source={object} onLoad={onLoad} />;
+}
+
 function Loader() {
   const { progress } = useProgress();
 
@@ -70,7 +131,13 @@ function Loader() {
   );
 }
 
-function Scene({ modelUrl }: { modelUrl: string | null }) {
+function Scene({
+  modelUrl,
+  format,
+}: {
+  modelUrl: string | null;
+  format?: ModelFormat | string | null;
+}) {
   const { camera } = useThree();
 
   useEffect(() => {
@@ -106,11 +173,7 @@ function Scene({ modelUrl }: { modelUrl: string | null }) {
       <Environment preset="studio" background={false} />
 
       {/* Ground plane */}
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -1, 0]}
-        receiveShadow
-      >
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
         <planeGeometry args={[10, 10]} />
         <shadowMaterial opacity={0.2} />
       </mesh>
@@ -122,7 +185,7 @@ function Scene({ modelUrl }: { modelUrl: string | null }) {
       {modelUrl && (
         <Suspense fallback={<Loader />}>
           <Center>
-            <Model url={modelUrl} />
+            <Model url={modelUrl} format={format} />
           </Center>
         </Suspense>
       )}
@@ -132,10 +195,15 @@ function Scene({ modelUrl }: { modelUrl: string | null }) {
 
 interface ModelViewerProps {
   modelUrl: string | null;
+  format?: ModelFormat | string | null;
   className?: string;
 }
 
-export function ModelViewer({ modelUrl, className = "" }: ModelViewerProps) {
+export function ModelViewer({
+  modelUrl,
+  format,
+  className = "",
+}: ModelViewerProps) {
   return (
     <div className={`relative w-full h-full min-h-[300px] ${className}`}>
       <Canvas
@@ -145,7 +213,7 @@ export function ModelViewer({ modelUrl, className = "" }: ModelViewerProps) {
         className="rounded-none"
       >
         <color attach="background" args={["#080a08"]} />
-        <Scene modelUrl={modelUrl} />
+        <Scene modelUrl={modelUrl} format={format} />
       </Canvas>
 
       {/* Overlay when no model */}

@@ -39,63 +39,116 @@ export interface PredictionStatusResult {
   status: Prediction["status"];
   modelUrl?: string;
   format?: string;
+  previewUrl?: string;
   error?: string;
 }
 
-function findOutputUrl(output: unknown): string {
-  if (!output) return "";
-
-  if (typeof output === "string") {
-    return output;
+function normalizeOutputUrl(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
   }
 
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      const url = findOutputUrl(item);
-      if (url) return url;
-    }
-    return "";
+  if (value instanceof URL) {
+    return value.toString();
   }
 
-  if (typeof output === "object") {
-    const record = output as Record<string, unknown>;
-    const urlValue = record.url;
-
-    if (typeof urlValue === "string") {
-      return urlValue;
-    }
-
-    if (urlValue instanceof URL) {
-      return urlValue.toString();
-    }
-
-    if (typeof urlValue === "function") {
-      const url = (urlValue as () => URL | string).call(output);
-      return url instanceof URL ? url.toString() : String(url);
-    }
-
-    const text = output.toString();
+  if (typeof value === "object" && value) {
+    const text = value.toString();
     if (text.startsWith("http") || text.startsWith("data:")) {
       return text;
-    }
-
-    for (const key of ["mesh", "model", "glb", "obj", "output"]) {
-      const url = findOutputUrl(record[key]);
-      if (url) return url;
-    }
-
-    for (const value of Object.values(record)) {
-      const url = findOutputUrl(value);
-      if (url) return url;
     }
   }
 
   return "";
 }
 
+function collectOutputUrls(output: unknown): string[] {
+  if (!output) return [];
+
+  if (typeof output === "string") {
+    return output ? [output] : [];
+  }
+
+  if (Array.isArray(output)) {
+    return output.flatMap((item) => collectOutputUrls(item));
+  }
+
+  if (typeof output === "object") {
+    const record = output as Record<string, unknown>;
+    const urlValue = record.url;
+    const urls: string[] = [];
+
+    if (typeof urlValue === "string") {
+      urls.push(urlValue);
+    }
+
+    if (urlValue instanceof URL) {
+      urls.push(urlValue.toString());
+    }
+
+    if (typeof urlValue === "function") {
+      const url = (urlValue as () => URL | string).call(output);
+      urls.push(url instanceof URL ? url.toString() : String(url));
+    }
+
+    const normalized = normalizeOutputUrl(output);
+    if (normalized) {
+      urls.push(normalized);
+    }
+
+    for (const key of ["mesh", "model", "glb", "obj", "output"]) {
+      urls.push(...collectOutputUrls(record[key]));
+    }
+
+    for (const value of Object.values(record)) {
+      urls.push(...collectOutputUrls(value));
+    }
+
+    return [...new Set(urls.filter(Boolean))];
+  }
+
+  return [];
+}
+
+function getUrlExtension(url: string) {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return pathname.match(/\.([a-z0-9]+)$/)?.[1] || "";
+  } catch {
+    return (
+      url
+        .toLowerCase()
+        .split("?")[0]
+        .match(/\.([a-z0-9]+)$/)?.[1] || ""
+    );
+  }
+}
+
+function findModelOutputUrl(output: unknown): string {
+  const urls = collectOutputUrls(output);
+  const modelUrl = urls.find((url) =>
+    ["glb", "gltf", "obj"].includes(getUrlExtension(url))
+  );
+
+  return modelUrl || urls[0] || "";
+}
+
+function findPreviewOutputUrl(output: unknown): string {
+  const urls = collectOutputUrls(output);
+  return (
+    urls.find((url) =>
+      ["gif", "mp4", "webm", "png", "jpg", "jpeg"].includes(
+        getUrlExtension(url)
+      )
+    ) || ""
+  );
+}
+
 function getFormatFromUrl(modelUrl: string) {
-  const lower = modelUrl.toLowerCase();
-  return lower.includes(".obj") ? "obj" : "glb";
+  const extension = getUrlExtension(modelUrl);
+  if (extension === "obj") return "obj";
+  if (extension === "gltf") return "gltf";
+  return "glb";
 }
 
 // Text to 3D using Shap-E model
@@ -111,11 +164,12 @@ export async function textTo3D(
     },
   });
 
-  const modelUrl = findOutputUrl(output);
+  const modelUrl = findModelOutputUrl(output);
 
   return {
     modelUrl,
     format: getFormatFromUrl(modelUrl),
+    previewUrl: findPreviewOutputUrl(output),
   };
 }
 
@@ -142,12 +196,13 @@ export async function getTextTo3DPredictionResult(
   const prediction = await replicate.predictions.get(predictionId);
 
   if (prediction.status === "succeeded") {
-    const modelUrl = findOutputUrl(prediction.output);
+    const modelUrl = findModelOutputUrl(prediction.output);
 
     return {
       status: prediction.status,
       modelUrl,
       format: getFormatFromUrl(modelUrl),
+      previewUrl: findPreviewOutputUrl(prediction.output),
     };
   }
 
