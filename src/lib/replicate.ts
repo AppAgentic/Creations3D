@@ -304,8 +304,8 @@ export const IMAGE_TO_3D_PROVIDER_MODEL = "tencent/hunyuan-3d-3.1";
 const IMAGE_TO_3D_PROVIDER_VERSION =
   "a2838628b41a2e0ee2eb19b3ea98a40d75f8d7639bf5a1ddd37ea299bb334854";
 const IMAGE_TO_3D_INPUT_DEFAULTS = {
-  enable_pbr: false,
-  face_count: 50000,
+  enable_pbr: true,
+  face_count: 100000,
   generate_type: "Normal",
 };
 
