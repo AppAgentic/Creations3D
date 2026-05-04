@@ -222,7 +222,7 @@ export default function GeneratePage() {
   };
 
   const pollGenerationStatus = async (id: string, token: string) => {
-    for (let attempt = 0; attempt < 100; attempt += 1) {
+    for (let attempt = 0; attempt < 200; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 3000));
       setProgress((current) => Math.min(95, Math.max(current, 18 + attempt)));
 
