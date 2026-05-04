@@ -16,9 +16,8 @@ env:
   - variable: REPLICATE_API_TOKEN
     secret: replicate-api-token
 
-  # World Labs API (3D World Generation)
-  - variable: WORLDLABS_API_KEY
-    secret: worldlabs-api-key
+  # World Labs API is intentionally omitted until the production key is in
+  # Secret Manager. The route fails closed and refunds reserved credits without it.
 
   # Cloudflare R2 Storage
   - variable: R2_ACCOUNT_ID
@@ -35,6 +34,8 @@ env:
   # Whop Payments
   - variable: WHOP_API_KEY
     secret: whop-api-key
+  - variable: WHOP_COMPANY_ID
+    secret: whop-company-id
   - variable: WHOP_WEBHOOK_SECRET
     secret: whop-webhook-secret
 

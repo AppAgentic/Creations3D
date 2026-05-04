@@ -17,10 +17,12 @@ import {
 
 const plans = [
   {
+    id: "creator",
     name: "Creator",
     price: "$9.99",
     period: "/month",
     credits: "50",
+    creditCount: 50,
     badge: "Start here",
     note: "For designers, makers, and solo creators.",
     math: "About $0.20 per text/image model generation",
@@ -33,16 +35,15 @@ const plans = [
       "Email support",
     ],
     cta: "Choose Creator",
-    whopUrl:
-      process.env.NEXT_PUBLIC_WHOP_BASIC_URL ||
-      "https://whop.com/checkout/your-basic-plan",
     emphasis: "starter",
   },
   {
+    id: "studio",
     name: "Studio",
     price: "$19.99",
     period: "/month",
     credits: "150",
+    creditCount: 150,
     badge: "Best value",
     note: "For teams shipping more assets.",
     math: "About $0.13 per text/image model generation",
@@ -55,9 +56,6 @@ const plans = [
       "Priority support",
     ],
     cta: "Choose Studio",
-    whopUrl:
-      process.env.NEXT_PUBLIC_WHOP_PRO_URL ||
-      "https://whop.com/checkout/your-pro-plan",
     emphasis: "primary",
   },
 ];
@@ -107,20 +105,39 @@ export default function PricingPage() {
       }
     }
 
-    const checkoutUrl = new URL(plan.whopUrl);
-    if (checkoutUser?.email) {
-      checkoutUrl.searchParams.set("email", checkoutUser.email);
-    }
-    if (checkoutUser?.uid) {
-      checkoutUrl.searchParams.set("metadata[firebase_uid]", checkoutUser.uid);
+    if (!checkoutUser) {
+      toast.error("Sign in did not complete. Try again to subscribe.");
+      trackEvent("pricing_sign_in_failed", { plan: plan.name });
+      return;
     }
 
-    trackEvent("pricing_checkout_redirected", {
-      plan: plan.name,
-      hasFirebaseUid: Boolean(checkoutUser?.uid),
-    });
+    try {
+      const token = await checkoutUser.getIdToken();
+      const response = await fetch("/api/whop/checkout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan: plan.id }),
+      });
 
-    window.location.assign(checkoutUrl.toString());
+      const payload = await response.json();
+
+      if (!response.ok || !payload.purchaseUrl) {
+        throw new Error(payload.error || "Checkout creation failed");
+      }
+
+      trackEvent("pricing_checkout_redirected", {
+        plan: plan.name,
+        hasFirebaseUid: Boolean(checkoutUser?.uid),
+      });
+
+      window.location.assign(payload.purchaseUrl);
+    } catch {
+      toast.error("Checkout did not open. Try again in a moment.");
+      trackEvent("pricing_checkout_failed", { plan: plan.name });
+    }
   };
 
   return (
