@@ -4,6 +4,7 @@ import Replicate from "replicate";
 // In Firebase App Hosting, env vars are auto-injected via apphosting.yaml
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
+  fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
 });
 
 export interface TextTo3DInput {

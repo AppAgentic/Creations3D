@@ -16,6 +16,8 @@ import { FieldValue } from "firebase-admin/firestore";
 
 const CREDIT_COST = 1;
 
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   let generationId: string | null = null;
   let userId: string | null = null;
