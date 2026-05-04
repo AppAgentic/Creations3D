@@ -125,6 +125,50 @@ function collectOutputUrls(output: unknown): string[] {
   return [];
 }
 
+async function collectOutputUrlsAsync(
+  output: unknown,
+  seen = new Set<unknown>()
+): Promise<string[]> {
+  if (!output || seen.has(output)) return [];
+
+  if (typeof output === "string") {
+    return output ? [output] : [];
+  }
+
+  if (output instanceof URL) {
+    return [output.toString()];
+  }
+
+  if (Array.isArray(output)) {
+    const nested = await Promise.all(
+      output.map((item) => collectOutputUrlsAsync(item, seen))
+    );
+    return [...new Set(nested.flat().filter(Boolean))];
+  }
+
+  if (typeof output === "object") {
+    seen.add(output);
+
+    const urls: string[] = [];
+    const normalized = await resolveOutputUrl(output);
+    if (normalized) urls.push(normalized);
+
+    const record = output as Record<string, unknown>;
+    for (const key of ["mesh", "model", "model_file", "glb", "obj", "output"]) {
+      urls.push(...(await collectOutputUrlsAsync(record[key], seen)));
+    }
+
+    const nested = await Promise.all(
+      Object.values(record).map((value) => collectOutputUrlsAsync(value, seen))
+    );
+    urls.push(...nested.flat());
+
+    return [...new Set(urls.filter(Boolean))];
+  }
+
+  return [];
+}
+
 function getUrlExtension(url: string) {
   try {
     const pathname = new URL(url).pathname.toLowerCase();
@@ -148,8 +192,28 @@ function findModelOutputUrl(output: unknown): string {
   return modelUrl || urls[0] || "";
 }
 
+async function findModelOutputUrlAsync(output: unknown): Promise<string> {
+  const urls = await collectOutputUrlsAsync(output);
+  const modelUrl = urls.find((url) =>
+    ["glb", "gltf", "obj"].includes(getUrlExtension(url))
+  );
+
+  return modelUrl || urls[0] || "";
+}
+
 function findPreviewOutputUrl(output: unknown): string {
   const urls = collectOutputUrls(output);
+  return (
+    urls.find((url) =>
+      ["gif", "mp4", "webm", "png", "jpg", "jpeg"].includes(
+        getUrlExtension(url)
+      )
+    ) || ""
+  );
+}
+
+async function findPreviewOutputUrlAsync(output: unknown): Promise<string> {
+  const urls = await collectOutputUrlsAsync(output);
   return (
     urls.find((url) =>
       ["gif", "mp4", "webm", "png", "jpg", "jpeg"].includes(
@@ -236,42 +300,34 @@ export async function getTextTo3DPredictionResult(
   };
 }
 
-// Image to 3D using TRELLIS model (recommended)
-// Model: firtoz/trellis - powerful 3D asset generation, 599K+ runs
-// Cost: ~$0.08 per run
+export const IMAGE_TO_3D_PROVIDER_MODEL = "tencent/hunyuan-3d-3.1";
+const IMAGE_TO_3D_PROVIDER_VERSION =
+  "a2838628b41a2e0ee2eb19b3ea98a40d75f8d7639bf5a1ddd37ea299bb334854";
+const IMAGE_TO_3D_INPUT_DEFAULTS = {
+  enable_pbr: false,
+  face_count: 50000,
+  generate_type: "Normal",
+};
+
 export async function imageTo3D(
   input: ImageTo3DInput
 ): Promise<GenerationResult> {
   const output = await replicate.run(
-    "firtoz/trellis:e8f6c45206993f297372f5436b90350817bd9b4a0d52d2a76df50c1c8afa2b3c",
+    `${IMAGE_TO_3D_PROVIDER_MODEL}:${IMAGE_TO_3D_PROVIDER_VERSION}`,
     {
       input: {
-        images: [input.imageUrl],
-        generate_model: true,
-        generate_color: true,
-        texture_size: 1024,
-        mesh_simplify: 0.95,
-        ss_sampling_steps: 12,
-        slat_sampling_steps: 12,
-        output_format: "glb",
+        image: input.imageUrl,
+        ...IMAGE_TO_3D_INPUT_DEFAULTS,
       },
     }
   );
 
-  // TRELLIS returns FileOutput objects from the Replicate client.
-  const result = output as {
-    model?: unknown;
-    model_file?: unknown;
-    color_video?: unknown;
-  };
-  const modelUrl =
-    (await resolveOutputUrl(result.model_file)) ||
-    (await resolveOutputUrl(result.model));
+  const modelUrl = await findModelOutputUrlAsync(output);
 
   return {
     modelUrl,
-    format: "glb",
-    previewUrl: await resolveOutputUrl(result.color_video),
+    format: getFormatFromUrl(modelUrl),
+    previewUrl: await findPreviewOutputUrlAsync(output),
   };
 }
 

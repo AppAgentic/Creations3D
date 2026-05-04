@@ -1196,7 +1196,8 @@ function ImageDropzone({
             <div>
               <p className="text-sm text-white/56">Drop an image here</p>
               <p className="mt-1 text-xs text-white/35">
-                Use clear silhouettes for stronger 3D results.
+                Use one clear object on a simple background for stronger
+                results.
               </p>
             </div>
             <Button
