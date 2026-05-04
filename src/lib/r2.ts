@@ -76,6 +76,15 @@ export async function getSignedDownloadUrl(
   return getSignedUrl(r2Client, command, { expiresIn });
 }
 
+export async function getFileObject(key: string) {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+
+  return r2Client.send(command);
+}
+
 // Delete a file from R2
 export async function deleteFile(key: string): Promise<void> {
   const command = new DeleteObjectCommand({

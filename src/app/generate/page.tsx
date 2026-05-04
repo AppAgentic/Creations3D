@@ -20,17 +20,14 @@ import { toast } from "sonner";
 import {
   Box,
   Check,
-  CreditCard,
   Download,
   Gauge,
   Globe,
   Image as ImageIcon,
   Layers3,
   Loader2,
-  PanelLeft,
   RotateCcw,
   Save,
-  Settings2,
   Sparkles,
   Type,
   Upload,
@@ -528,7 +525,7 @@ export default function GeneratePage() {
       setIsSaved(true);
       trackEvent("model_saved", {
         generationId: data.generationId || generationId,
-        format: "glb",
+        format: modelFormat,
       });
       toast.success("Model saved to library");
     } catch (error) {
@@ -582,39 +579,16 @@ export default function GeneratePage() {
       ? worldModel === "mini"
         ? "usually 30-45s"
         : "usually ~5 min"
-      : "usually ~1 min";
+      : mode === "text"
+        ? "usually 2-4 min"
+        : "usually 1-2 min";
 
   return (
     <div className="studio-shell min-h-screen text-white">
       <Navbar />
 
       <main className="min-h-screen pt-16">
-        <div className="grid min-h-[calc(100svh-4rem)] lg:grid-cols-[4.5rem_minmax(0,1fr)_25rem]">
-          <aside className="hidden border-r border-white/10 bg-black/20 lg:flex lg:flex-col lg:items-center lg:justify-between lg:py-5">
-            <div className="flex flex-col gap-3">
-              {[PanelLeft, Box, Layers3, Settings2].map((Icon, index) => (
-                <button
-                  key={index}
-                  className={`flex size-10 items-center justify-center border text-white/55 transition-colors hover:text-white ${
-                    index === 1
-                      ? "border-primary/60 bg-primary/10 text-primary"
-                      : "border-white/10 bg-white/[0.03]"
-                  }`}
-                  aria-label={`Workspace control ${index + 1}`}
-                >
-                  <Icon className="size-4" />
-                </button>
-              ))}
-            </div>
-            <Link
-              href="/pricing"
-              className="flex size-10 items-center justify-center border border-white/10 bg-white/[0.03] text-white/55 transition-colors hover:text-white"
-              aria-label="Credits and pricing"
-            >
-              <CreditCard className="size-4" />
-            </Link>
-          </aside>
-
+        <div className="grid min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,1fr)_25rem]">
           <section className="relative min-h-[56rem] overflow-hidden border-b border-white/10 bg-[#080a08] lg:min-h-0 lg:border-b-0 lg:border-r">
             <div className="absolute inset-0 studio-grid opacity-50" />
             <div className="absolute inset-x-0 top-0 z-20 flex flex-col gap-4 border-b border-white/10 bg-[#080a08]/78 px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between lg:px-6">
@@ -626,19 +600,15 @@ export default function GeneratePage() {
                   {activeModeLabel}
                 </h1>
               </div>
-              <div className="flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-white/56">
-                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
+              <div className="max-w-xl text-sm leading-6 text-white/56 sm:text-right">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
                   Credits {displayedCredits}
-                </span>
-                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  Model download
-                </span>
-                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  Library save
-                </span>
-                <span className="border border-white/10 bg-white/[0.03] px-3 py-2">
-                  Refund on failure
-                </span>
+                </p>
+                <p>
+                  Generate a model, preview it here, then save it to your
+                  library for download. Failed generations are refunded
+                  automatically.
+                </p>
               </div>
             </div>
 
@@ -665,6 +635,11 @@ export default function GeneratePage() {
                       type="world"
                       title="Your 3D world preview will appear here"
                       detail="Choose a prompt or reference image, then generate a navigable environment."
+                      steps={[
+                        "Describe the world",
+                        "Generate with credits",
+                        "Open or download assets",
+                      ]}
                     />
                   )}
                 </div>
@@ -674,7 +649,12 @@ export default function GeneratePage() {
                     <EmptyViewport
                       type="model"
                       title="Generating 3D model"
-                      detail={`${progressLabel} complete. Your preview will load here when the model is ready.`}
+                      detail={`${progressLabel} complete. The preview will load here as soon as the model is ready.`}
+                      steps={[
+                        "Credit reserved",
+                        "Building geometry",
+                        "Preparing preview",
+                      ]}
                       active
                     />
                   ) : modelUrl ? (
@@ -685,7 +665,12 @@ export default function GeneratePage() {
                     <EmptyViewport
                       type="model"
                       title="Your 3D model preview will appear here"
-                      detail="Add a prompt or reference image, then generate to see the real output."
+                      detail="Add a prompt or reference image, then generate to see the real output. The preview stays empty until your model is ready."
+                      steps={[
+                        "Write a prompt",
+                        "Generate with 1 credit",
+                        "Save or download",
+                      ]}
                     />
                   )}
                 </div>
@@ -904,12 +889,7 @@ export default function GeneratePage() {
                     type="button"
                     onClick={() => {
                       setPrompt(starter);
-                      setMode(
-                        starter.includes("inspection bay") &&
-                          worldGenerationEnabled
-                          ? "world"
-                          : "text"
-                      );
+                      setMode("text");
                       trackEvent("prompt_starter_selected", {
                         starter,
                         surface: "generator",
@@ -950,8 +930,8 @@ export default function GeneratePage() {
 
             <div className="mt-6 space-y-3">
               <p className="text-center text-xs leading-5 text-white/45">
-                Uses {generationCreditLabel} / refunded if generation fails /{" "}
-                {generationDurationLabel}
+                Uses {generationCreditLabel}. If generation fails, the credit
+                returns automatically. {generationDurationLabel}.
               </p>
               <Button
                 className="h-12 w-full rounded-none"
@@ -1089,11 +1069,13 @@ function EmptyViewport({
   type,
   title,
   detail,
+  steps,
   active = false,
 }: {
   type: "model" | "world";
   title: string;
   detail: string;
+  steps?: string[];
   active?: boolean;
 }) {
   const Icon = type === "world" ? Globe : Box;
@@ -1124,6 +1106,21 @@ function EmptyViewport({
         <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/55">
           {detail}
         </p>
+        {steps && steps.length > 0 && (
+          <div className="mt-7 grid gap-px border border-white/10 bg-white/10 text-left">
+            {steps.map((step, index) => (
+              <div
+                key={step}
+                className="flex items-center gap-3 bg-[#0c0f0c]/95 px-4 py-3"
+              >
+                <span className="font-mono text-[10px] text-primary/80">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="text-xs text-white/62">{step}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

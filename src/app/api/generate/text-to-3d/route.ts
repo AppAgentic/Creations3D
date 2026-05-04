@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createTextTo3DPrediction } from "@/lib/replicate";
+import {
+  createTextTo3DPrediction,
+  TEXT_TO_3D_PROVIDER_MODEL,
+} from "@/lib/replicate";
 import {
   InsufficientCreditsError,
   refundCredits,
@@ -68,6 +71,7 @@ export async function POST(request: NextRequest) {
     await updateGenerationRecord(generationId, {
       predictionId: prediction.predictionId,
       providerStatus: prediction.status,
+      providerModel: TEXT_TO_3D_PROVIDER_MODEL,
     });
 
     return NextResponse.json(

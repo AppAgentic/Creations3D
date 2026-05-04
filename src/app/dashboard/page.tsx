@@ -1,20 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
+import { createModelTitle } from "@/lib/model-metadata";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Box,
@@ -24,23 +18,10 @@ import {
   Eye,
   FileArchive,
   Grid2X2,
-  Loader2,
   Plus,
   Search,
   Trash2,
 } from "lucide-react";
-
-const ModelViewer = dynamic(
-  () => import("@/components/ModelViewer").then((mod) => mod.ModelViewer),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-[#080a08]">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    ),
-  }
-);
 
 interface SavedModel {
   generationId: string;
@@ -49,8 +30,11 @@ interface SavedModel {
   size?: number;
   lastModified?: string;
   format: string;
+  title?: string;
   prompt?: string;
   type?: string;
+  providerModel?: string | null;
+  previewUrl?: string | null;
   creditsUsed?: number;
 }
 
@@ -94,13 +78,60 @@ function extractNameFromKey(key: string): string {
   return filename.replace(/\.(glb|obj)$/i, "");
 }
 
+function getDisplayTitle(model: SavedModel) {
+  return (
+    model.title || createModelTitle(model.prompt, extractNameFromKey(model.key))
+  );
+}
+
+function isVideoPreview(url: string) {
+  return /\.(mp4|webm|mov)(\?|$)/i.test(url);
+}
+
+function ModelThumb({ model }: { model: SavedModel }) {
+  const [previewFailed, setPreviewFailed] = useState(false);
+
+  if (model.previewUrl && !previewFailed) {
+    return (
+      <div className="absolute inset-0 bg-black">
+        {isVideoPreview(model.previewUrl) ? (
+          <video
+            src={model.previewUrl}
+            className="size-full object-cover opacity-80"
+            muted
+            loop
+            playsInline
+            autoPlay
+            onError={() => setPreviewFailed(true)}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={model.previewUrl}
+            alt={`${getDisplayTitle(model)} preview`}
+            className="size-full object-cover opacity-85"
+            onError={() => setPreviewFailed(true)}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="absolute inset-0 studio-grid opacity-45" />
+      <div className="absolute left-1/2 top-1/2 size-28 -translate-x-1/2 -translate-y-1/2 rotate-12 border border-primary/60 bg-primary/[0.04] shadow-[0_0_54px_rgba(201,255,56,0.1)] transition-transform duration-300 group-hover:scale-110" />
+      <div className="absolute left-1/2 top-1/2 size-16 -translate-x-[20%] -translate-y-[35%] border border-white/25 bg-white/[0.08]" />
+    </>
+  );
+}
+
 export default function DashboardPage() {
   const { user, loading: authLoading, signInWithGoogle } = useAuth();
   const [models, setModels] = useState<SavedModel[]>([]);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<SavedModel | null>(null);
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [creditState, setCreditState] = useState<{
     credits: number;
     plan: string | null;
@@ -173,16 +204,6 @@ export default function DashboardPage() {
     };
   }, [authLoading, user]);
 
-  const handleView = (model: SavedModel) => {
-    trackEvent("dashboard_model_review_clicked", {
-      generationId: model.generationId,
-      format: model.format,
-      type: model.type || null,
-    });
-    setSelectedModel(model);
-    setIsViewerOpen(true);
-  };
-
   const handleDelete = async (model: SavedModel) => {
     if (!user) return;
 
@@ -249,7 +270,7 @@ export default function DashboardPage() {
     if (!normalizedQuery) return true;
 
     return [
-      extractNameFromKey(model.key),
+      getDisplayTitle(model),
       model.prompt || "",
       model.format,
       model.type || "",
@@ -347,9 +368,12 @@ export default function DashboardPage() {
               </div>
 
               {isLoading ? (
-                <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {[1, 2, 3, 4, 5, 6].map((item) => (
-                    <div key={item} className="bg-[#0c0f0c] p-4">
+                    <div
+                      key={item}
+                      className="border border-white/10 bg-[#0c0f0c] p-4"
+                    >
                       <Skeleton className="h-48 rounded-none bg-white/10" />
                       <Skeleton className="mt-4 h-4 w-2/3 rounded-none bg-white/10" />
                       <Skeleton className="mt-2 h-3 w-1/3 rounded-none bg-white/10" />
@@ -425,18 +449,14 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid auto-rows-[18rem] gap-px border border-white/10 bg-white/10 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredModels.map((model, index) => (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredModels.map((model) => (
                     <article
-                      key={model.key}
-                      className={`group relative overflow-hidden bg-[#0c0f0c] p-4 ${
-                        index % 5 === 1 ? "md:row-span-2" : ""
-                      }`}
+                      key={model.generationId}
+                      className="group relative min-h-[18rem] overflow-hidden border border-white/10 bg-[#0c0f0c] p-4"
                     >
                       <div className="relative h-full overflow-hidden bg-[#080a08]">
-                        <div className="absolute inset-0 studio-grid opacity-45" />
-                        <div className="absolute left-1/2 top-1/2 size-24 -translate-x-1/2 -translate-y-1/2 rotate-12 border border-primary/60 bg-white/[0.04] shadow-[0_0_54px_rgba(201,255,56,0.1)] transition-transform duration-300 group-hover:scale-110" />
-                        <div className="absolute left-1/2 top-1/2 size-14 -translate-x-[20%] -translate-y-[35%] border border-white/25 bg-white/[0.08]" />
+                        <ModelThumb model={model} />
 
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                           <div className="mb-3 flex items-center gap-2">
@@ -448,7 +468,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
                           <h2 className="line-clamp-1 font-medium">
-                            {extractNameFromKey(model.key)}
+                            {getDisplayTitle(model)}
                           </h2>
                           {model.prompt && (
                             <p className="mt-1 line-clamp-1 text-xs text-white/55">
@@ -464,11 +484,22 @@ export default function DashboardPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleView(model)}
+                              asChild
                               className="rounded-none border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.1] hover:text-white"
                             >
-                              <Eye className="size-4" />
-                              Preview
+                              <Link
+                                href={`/models/${model.generationId}`}
+                                onClick={() =>
+                                  trackEvent("dashboard_model_review_clicked", {
+                                    generationId: model.generationId,
+                                    format: model.format,
+                                    type: model.type || null,
+                                  })
+                                }
+                              >
+                                <Eye className="size-4" />
+                                Open
+                              </Link>
                             </Button>
                             <Button
                               size="sm"
@@ -509,7 +540,7 @@ export default function DashboardPage() {
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-white/55">
                   {latestModel
-                    ? `Last saved: ${extractNameFromKey(latestModel.key)}. Use the same prompt direction to make another version.`
+                    ? `Last saved: ${getDisplayTitle(latestModel)}. Use the same prompt direction to make another version.`
                     : "Use a starter prompt, generate a model, then save it here for review and download."}
                 </p>
                 <Button asChild className="mt-6 w-full rounded-none">
@@ -576,28 +607,6 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-
-      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="h-[82vh] max-w-5xl rounded-none border-white/10 bg-[#080a08] text-white">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedModel
-                ? extractNameFromKey(selectedModel.key)
-                : "3D Model"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="min-h-0 flex-1">
-            {selectedModel && (
-              <div className="h-[calc(82vh-104px)] overflow-hidden border border-white/10">
-                <ModelViewer
-                  modelUrl={selectedModel.url}
-                  format={selectedModel.format}
-                />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

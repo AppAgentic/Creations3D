@@ -47,15 +47,15 @@ const proofPoints = [
     detail: "No mystery spend at the moment of creation.",
   },
   {
-    value: "47.2s",
-    label: "typical first model preview",
-    detail: "Fast enough to test several directions in one working session.",
+    value: "2-4m",
+    label: "typical text model run",
+    detail: "High-quality geometry takes longer than a quick sketch preview.",
   },
   {
-    value: "GLB/OBJ",
+    value: "GLB",
     label: "primary download format",
     detail:
-      "Generated models are saved and downloaded in the format returned by the model provider.",
+      "Generated models are saved and downloaded in the available provider format.",
   },
 ];
 
@@ -362,8 +362,8 @@ export default function HomePage() {
             <div className="border border-white/10 bg-white/[0.03] p-4">
               <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
                 {[
-                  ["47.2s", "median model generation"],
-                  ["GLB/OBJ", "model download"],
+                  ["2-4m", "text model run"],
+                  ["GLB", "primary download"],
                   ["Auto", "detail target"],
                 ].map(([value, label]) => (
                   <div key={label} className="bg-[#0c0f0c] p-6">

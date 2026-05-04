@@ -4,13 +4,15 @@ import { generateFileKey, uploadFile } from "@/lib/r2";
 import { adminDb } from "@/lib/firebase-admin";
 import { updateGenerationRecord } from "@/lib/generation-records";
 import { AuthError, requireUser } from "@/lib/server-auth";
+import { createModelTitle } from "@/lib/model-metadata";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser(request);
     const body = await request.json();
     const { modelUrl, generationId } = body;
-    const format = body.format === "obj" ? "obj" : "glb";
+    const format =
+      body.format === "obj" || body.format === "gltf" ? body.format : "glb";
 
     if (!modelUrl) {
       return NextResponse.json(
@@ -41,6 +43,7 @@ export async function POST(request: NextRequest) {
         type: "text-to-3d",
         provider: "replicate",
         status: "generated",
+        title: createModelTitle(body.prompt),
         modelUrl,
         format,
         creditsUsed: 0,
@@ -59,7 +62,12 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    const contentType = format === "obj" ? "model/obj" : "model/gltf-binary";
+    const contentType =
+      format === "obj"
+        ? "model/obj"
+        : format === "gltf"
+          ? "model/gltf+json"
+          : "model/gltf-binary";
     const key = generateFileKey(user.uid, "model", format);
 
     const result = await uploadFile(key, buffer, contentType);
@@ -69,6 +77,7 @@ export async function POST(request: NextRequest) {
       savedKey: result.key,
       savedUrl: result.url,
       format,
+      size: buffer.length,
       savedAt: FieldValue.serverTimestamp(),
     });
 

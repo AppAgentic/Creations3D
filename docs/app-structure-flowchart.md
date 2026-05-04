@@ -21,9 +21,9 @@ flowchart TD
   TextApi --> AuthGate[Firebase ID token check]
   AuthGate --> CreditReserve[Credit reserve + ledger event]
   CreditReserve --> FirestoreUsers
-  TextApi --> ReplicateShapeE[Replicate Shap-E]
-  ReplicateShapeE --> ModelPreview[ModelViewer preview]
-  ReplicateShapeE --> GenerationMeta[(Firestore generations)]
+  TextApi --> ReplicateRodin[Replicate Rodin Gen-2]
+  ReplicateRodin --> ModelPreview[ModelViewer preview]
+  ReplicateRodin --> GenerationMeta[(Firestore generations)]
 
   ImageMode --> ImageApi[/api/generate/image-to-3d]
   ImageApi --> AuthGate
@@ -42,6 +42,10 @@ flowchart TD
   GenerationMeta --> R2
   R2 --> SignedUrls[Signed/public model URLs]
   SignedUrls --> Dashboard
+  Dashboard --> ModelDetail[Model detail /models/:generationId]
+  ModelDetail --> AuthGate
+  ModelDetail --> GenerationMeta
+  SignedUrls --> ModelDetail
 
   Generate --> CreditsApi[/api/user/credits]
   Dashboard --> CreditsApi
@@ -61,7 +65,7 @@ flowchart TD
 
 ## Current Completion Read
 
-The product skeleton, paid-access core, and first conversion/retention pass are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image model generation routes, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing/search/delete, Firestore generation metadata, Studio Cockpit UI direction, landing proof/FAQ/starter prompts, pricing credit math, returning-session prompts, and client analytics events.
+The product skeleton, paid-access core, and first conversion/retention pass are in place: Next app routes, Firebase auth context, paid pricing UI, Whop webhook, authenticated text/image model generation routes, Rodin Gen-2 text generation, model preview, credit reservation/deduction/refund, save-to-library, R2 storage, dashboard listing/search/delete, detail pages, Firestore generation metadata, Studio Cockpit UI direction, landing proof/FAQ/starter prompts, pricing credit math, returning-session prompts, and client analytics events.
 
 It is closer to production-complete, but still needs live-provider QA and business/legal finishing before launch.
 

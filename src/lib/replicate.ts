@@ -7,13 +7,14 @@ const replicate = new Replicate({
   fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
 });
 
-const SHAPE_E_VERSION =
-  "5957069d5c509126a73c7cb68abcddbb985aeefa4d318e7c63ec1352ce6da68c";
-const SHAPE_E_INPUT_DEFAULTS = {
-  guidance_scale: 15,
-  render_mode: "nerf",
-  render_size: 256,
-  save_mesh: true,
+export const TEXT_TO_3D_PROVIDER_MODEL = "hyper3d/rodin";
+const RODIN_INPUT_DEFAULTS = {
+  tier: "Gen-2",
+  quality: "medium",
+  material: "PBR",
+  mesh_mode: "Quad",
+  geometry_file_format: "glb",
+  preview_render: true,
 };
 
 export interface TextTo3DInput {
@@ -151,16 +152,16 @@ function getFormatFromUrl(modelUrl: string) {
   return "glb";
 }
 
-// Text to 3D using Shap-E model
-// Model: cjwbw/shap-e - generates 3D from text prompts
-// Cost: ~$0.09 per run
+// Text to 3D using Hyper3D Rodin Gen-2.
+// This is kept for synchronous callers; the app generation flow uses async
+// predictions so users can wait on longer high-quality runs.
 export async function textTo3D(
   input: TextTo3DInput
 ): Promise<GenerationResult> {
-  const output = await replicate.run(`cjwbw/shap-e:${SHAPE_E_VERSION}`, {
+  const output = await replicate.run(TEXT_TO_3D_PROVIDER_MODEL, {
     input: {
       prompt: input.prompt,
-      ...SHAPE_E_INPUT_DEFAULTS,
+      ...RODIN_INPUT_DEFAULTS,
     },
   });
 
@@ -177,10 +178,10 @@ export async function createTextTo3DPrediction(
   input: TextTo3DInput
 ): Promise<PredictionStart> {
   const prediction = await replicate.predictions.create({
-    version: SHAPE_E_VERSION,
+    model: TEXT_TO_3D_PROVIDER_MODEL,
     input: {
       prompt: input.prompt,
-      ...SHAPE_E_INPUT_DEFAULTS,
+      ...RODIN_INPUT_DEFAULTS,
     },
   });
 

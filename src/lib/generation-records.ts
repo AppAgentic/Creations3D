@@ -1,5 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase-admin";
+import { createModelTitle } from "@/lib/model-metadata";
 
 export type GenerationStatus = "processing" | "generated" | "saved" | "failed";
 
@@ -20,17 +21,21 @@ export async function createGenerationRecord({
   creditsUsed: number;
   input?: Record<string, unknown>;
 }) {
-  await adminDb().collection("generations").doc(generationId).set({
-    userId,
-    type,
-    prompt: prompt || null,
-    provider,
-    creditsUsed,
-    status: "processing",
-    input: input || {},
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  });
+  await adminDb()
+    .collection("generations")
+    .doc(generationId)
+    .set({
+      userId,
+      type,
+      prompt: prompt || null,
+      title: createModelTitle(prompt),
+      provider,
+      creditsUsed,
+      status: "processing",
+      input: input || {},
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
 }
 
 export async function updateGenerationRecord(

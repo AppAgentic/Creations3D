@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSignedDownloadUrl } from "@/lib/r2";
 import { adminDb } from "@/lib/firebase-admin";
 import { AuthError, requireUser } from "@/lib/server-auth";
+import { createModelTitle } from "@/lib/model-metadata";
 
 type FirestoreTimestampLike = {
   toDate?: () => Date;
@@ -73,8 +74,16 @@ export async function GET(request: NextRequest) {
             lastModified: savedAt || completedAt || createdAt,
             format: item.format || "glb",
             status: item.status || "generated",
+            title:
+              item.title ||
+              createModelTitle(
+                typeof item.prompt === "string" ? item.prompt : null,
+                key ? key.split("/").pop() || item.id : item.id
+              ),
             prompt: item.prompt || null,
             type: item.type,
+            providerModel: item.providerModel || null,
+            previewUrl: item.previewUrl || null,
             creditsUsed: item.creditsUsed || 0,
           };
         })
