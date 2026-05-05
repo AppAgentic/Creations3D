@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
         plan: plan.key,
         credits: plan.credits,
         priceUsd: plan.priceUsd,
+        purchaseType: plan.kind,
+        purchaseId: checkout.purchaseId,
         checkoutId: checkout.checkoutId,
         planId: checkout.planId,
         status: "pending",
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       purchaseUrl: checkout.purchaseUrl,
       checkoutId: checkout.checkoutId,
+      purchaseId: checkout.purchaseId,
       planId: checkout.planId,
     });
   } catch (error) {

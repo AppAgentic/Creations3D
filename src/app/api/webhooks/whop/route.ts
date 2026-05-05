@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { PLAN_CREDIT_COUNTS } from "@/lib/generation-costs";
+import {
+  CREDIT_PACK_CREDIT_COUNTS,
+  PLAN_CREDIT_COUNTS,
+} from "@/lib/generation-costs";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import crypto from "crypto";
 
@@ -22,7 +25,7 @@ const INACTIVE_MEMBERSHIP_EVENTS = new Set([
 const PLAN_CREDITS: Record<string, number> = {
   basic: PLAN_CREDIT_COUNTS.creator,
   creator: PLAN_CREDIT_COUNTS.creator,
-  pro: PLAN_CREDIT_COUNTS.studio,
+  pro: PLAN_CREDIT_COUNTS.pro,
   studio: PLAN_CREDIT_COUNTS.studio,
 };
 
@@ -182,8 +185,8 @@ function getWebhookDocId(eventId: string): string {
   return `whop_${crypto.createHash("sha256").update(eventId).digest("hex")}`;
 }
 
-function getCreditEventDocId(eventId: string): string {
-  return `whop_${crypto.createHash("sha256").update(`credit:${eventId}`).digest("hex")}`;
+function getStableCreditEventDocId(sourceId: string): string {
+  return `whop_${crypto.createHash("sha256").update(`credit-grant:${sourceId}`).digest("hex")}`;
 }
 
 async function claimWebhookEvent(
@@ -319,11 +322,20 @@ function getPlanKey(data: Record<string, unknown>): string {
     .join(" ")
     .toLowerCase();
 
-  if (planText.includes("studio") || planText.includes("pro")) {
+  if (planText.includes("pro")) {
+    return "pro";
+  }
+
+  if (planText.includes("studio")) {
     return "studio";
   }
 
   return "creator";
+}
+
+function getPurchaseType(data: Record<string, unknown>): string {
+  const metadata = getMetadata(data);
+  return readString(metadata.creations3d_purchase_type) || "";
 }
 
 function getPlanCredits(data: Record<string, unknown>): number {
@@ -386,11 +398,39 @@ function getProductName(data: Record<string, unknown>): string {
   ).toLowerCase();
 }
 
+function getCreditPackCredits(data: Record<string, unknown>): number {
+  const metadata = getMetadata(data);
+  let credits = readNumber(metadata.creations3d_credits) || 0;
+  const productName = getProductName(data);
+
+  if (!credits && productName.includes("10 credits")) {
+    credits = 10;
+  } else if (!credits && productName.includes("12 credits")) {
+    credits = CREDIT_PACK_CREDIT_COUNTS.starter_pack;
+  } else if (!credits && productName.includes("15 credits")) {
+    credits = 15;
+  } else if (!credits && productName.includes("40 credits")) {
+    credits = 40;
+  } else if (!credits && productName.includes("50 credits")) {
+    credits = 50;
+  } else if (!credits && productName.includes("100 credits")) {
+    credits = 100;
+  } else if (!credits && productName.includes("120 credits")) {
+    credits = 120;
+  }
+
+  return credits;
+}
+
 async function handleMembershipActivated(
   db: Firestore,
   data: Record<string, unknown>,
   eventId: string
 ): Promise<Record<string, unknown>> {
+  if (getPurchaseType(data) === "credit_pack") {
+    return grantCreditPack(db, data, eventId);
+  }
+
   const firebaseUid = getFirebaseUid(data);
 
   if (!firebaseUid) {
@@ -398,48 +438,23 @@ async function handleMembershipActivated(
   }
 
   const plan = getPlanKey(data);
-  const credits = getPlanCredits(data);
   const whopUserId = getWhopUserId(data);
   const email = getEmail(data);
   const membershipId = getMembershipId(data);
-  const creditEventRef = db
-    .collection("creditEvents")
-    .doc(getCreditEventDocId(eventId));
 
-  await db.runTransaction(async (transaction) => {
-    const existingCreditEvent = await transaction.get(creditEventRef);
-    if (existingCreditEvent.exists) {
-      return;
-    }
-
-    transaction.set(
-      db.collection("users").doc(firebaseUid),
-      {
-        whopUserId,
-        whopMembershipId: membershipId,
-        email,
-        plan,
-        credits: FieldValue.increment(credits),
-        subscriptionStatus: "active",
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    transaction.create(creditEventRef, {
-      userId: firebaseUid,
+  await db.collection("users").doc(firebaseUid).set(
+    {
       whopUserId,
       whopMembershipId: membershipId,
-      type: "credit",
-      amount: credits,
-      reason: "whop-membership-active",
+      email,
       plan,
-      sourceEventId: eventId,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-  });
+      subscriptionStatus: "active",
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
 
-  return { updated: true, firebaseUid, plan, credits };
+  return { updated: true, firebaseUid, plan, subscriptionStatus: "active" };
 }
 
 async function handleMembershipDeactivated(
@@ -473,40 +488,59 @@ async function handlePaymentSucceeded(
   data: Record<string, unknown>,
   eventId: string
 ): Promise<Record<string, unknown>> {
+  if (getPurchaseType(data) === "credit_pack") {
+    return grantCreditPack(db, data, eventId);
+  }
+
+  return grantSubscriptionCredits(db, data, eventId);
+}
+
+function getPurchaseGrantId(
+  data: Record<string, unknown>,
+  eventId: string
+): string {
   const metadata = getMetadata(data);
+  const payment = asRecord(data.payment);
+  const invoice = asRecord(data.invoice);
+  const checkout = asRecord(data.checkout);
+  const checkoutConfiguration = asRecord(data.checkout_configuration);
+
+  return (
+    readString(metadata.creations3d_purchase_id) ||
+    readString(payment.id) ||
+    readString(invoice.id) ||
+    readString(checkout.id) ||
+    readString(checkoutConfiguration.id) ||
+    readString(data.payment_id) ||
+    readString(data.invoice_id) ||
+    eventId
+  );
+}
+
+async function grantCreditPack(
+  db: Firestore,
+  data: Record<string, unknown>,
+  eventId: string
+): Promise<Record<string, unknown>> {
   const firebaseUid = getFirebaseUid(data);
 
   if (!firebaseUid) {
     throw new Error("missing_firebase_uid_metadata");
   }
 
-  if (readString(metadata.creations3d_purchase_type) !== "credit_pack") {
-    return { ignored: true, reason: "not_a_credit_pack_payment" };
-  }
-
-  let credits = readNumber(metadata.creations3d_credits) || 0;
-  const productName = getProductName(data);
-
-  if (!credits && productName.includes("10 credits")) {
-    credits = 10;
-  } else if (!credits && productName.includes("40 credits")) {
-    credits = 40;
-  } else if (!credits && productName.includes("50 credits")) {
-    credits = 50;
-  } else if (!credits && productName.includes("100 credits")) {
-    credits = 100;
-  } else if (!credits && productName.includes("120 credits")) {
-    credits = 120;
-  }
+  const metadata = getMetadata(data);
+  const credits = getCreditPackCredits(data);
 
   if (!credits) {
     return { ignored: true, reason: "no_credit_pack_detected" };
   }
 
+  const purchaseGrantId = getPurchaseGrantId(data, eventId);
   const creditEventRef = db
     .collection("creditEvents")
-    .doc(getCreditEventDocId(eventId));
+    .doc(getStableCreditEventDocId(`credit-pack:${purchaseGrantId}`));
   const whopUserId = getWhopUserId(data);
+  let granted = false;
 
   await db.runTransaction(async (transaction) => {
     const existingCreditEvent = await transaction.get(creditEventRef);
@@ -520,6 +554,7 @@ async function handlePaymentSucceeded(
         whopUserId,
         email: getEmail(data),
         credits: FieldValue.increment(credits),
+        lastCreditPack: readString(metadata.creations3d_plan) || "starter_pack",
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
@@ -530,14 +565,76 @@ async function handlePaymentSucceeded(
       whopUserId,
       type: "credit",
       amount: credits,
-      reason: "whop-payment-succeeded",
-      productName,
+      reason: "whop-credit-pack",
+      purchaseGrantId,
       sourceEventId: eventId,
       createdAt: FieldValue.serverTimestamp(),
     });
+
+    granted = true;
   });
 
-  return { updated: true, firebaseUid, credits };
+  return { updated: granted, firebaseUid, credits };
+}
+
+async function grantSubscriptionCredits(
+  db: Firestore,
+  data: Record<string, unknown>,
+  eventId: string
+): Promise<Record<string, unknown>> {
+  const firebaseUid = getFirebaseUid(data);
+
+  if (!firebaseUid) {
+    throw new Error("missing_firebase_uid_metadata");
+  }
+
+  const plan = getPlanKey(data);
+  const credits = getPlanCredits(data);
+  const whopUserId = getWhopUserId(data);
+  const membershipId = getMembershipId(data);
+  const purchaseGrantId = getPurchaseGrantId(data, eventId);
+  const creditEventRef = db
+    .collection("creditEvents")
+    .doc(getStableCreditEventDocId(`subscription:${purchaseGrantId}`));
+  let granted = false;
+
+  await db.runTransaction(async (transaction) => {
+    const existingCreditEvent = await transaction.get(creditEventRef);
+    if (existingCreditEvent.exists) {
+      return;
+    }
+
+    transaction.set(
+      db.collection("users").doc(firebaseUid),
+      {
+        whopUserId,
+        whopMembershipId: membershipId,
+        email: getEmail(data),
+        plan,
+        credits: FieldValue.increment(credits),
+        subscriptionStatus: "active",
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    transaction.create(creditEventRef, {
+      userId: firebaseUid,
+      whopUserId,
+      whopMembershipId: membershipId,
+      type: "credit",
+      amount: credits,
+      reason: "whop-subscription-payment",
+      plan,
+      purchaseGrantId,
+      sourceEventId: eventId,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    granted = true;
+  });
+
+  return { updated: granted, firebaseUid, plan, credits };
 }
 
 export async function POST(request: NextRequest) {

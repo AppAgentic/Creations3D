@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
 import {
+  CREDIT_PACK_CREDIT_COUNTS,
+  CREDIT_PACK_PRICES_USD,
   IMAGE_TO_3D_CREDIT_COST,
   PLAN_CREDIT_COUNTS,
   PLAN_PRICES_USD,
@@ -21,7 +23,44 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const plans = [
+type PricingOffer = {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  credits: string;
+  creditCount: number;
+  badge: string;
+  note: string;
+  math: string;
+  features: string[];
+  cta: string;
+  emphasis: "starter" | "primary" | "anchor" | "pack";
+};
+
+const starterPack: PricingOffer = {
+  id: "starter_pack",
+  name: "Starter Pack",
+  price: `$${CREDIT_PACK_PRICES_USD.starter_pack}`,
+  period: " one-time",
+  credits: `${CREDIT_PACK_CREDIT_COUNTS.starter_pack}`,
+  creditCount: CREDIT_PACK_CREDIT_COUNTS.starter_pack,
+  badge: "One-time",
+  note: "For one-off buyers who want to make a first model without a monthly plan.",
+  math: "Up to 1 premium text model plus 2 image models, or 6 image models",
+  features: [
+    "12 credits once",
+    "No subscription",
+    "Premium text-to-3D uses 8 credits",
+    "Image-to-3D uses 2 credits",
+    "Saved model library",
+    "Model downloads",
+  ],
+  cta: "Buy Starter Pack",
+  emphasis: "pack",
+};
+
+const subscriptionPlans: PricingOffer[] = [
   {
     id: "creator",
     name: "Creator",
@@ -51,7 +90,7 @@ const plans = [
     period: "/month",
     credits: `${PLAN_CREDIT_COUNTS.studio}`,
     creditCount: PLAN_CREDIT_COUNTS.studio,
-    badge: "Best value",
+    badge: "Most popular",
     note: "For teams shipping more assets.",
     math: "Up to 15 premium text models or 60 image models",
     features: [
@@ -66,18 +105,41 @@ const plans = [
     cta: "Choose Studio",
     emphasis: "primary",
   },
+  {
+    id: "pro",
+    name: "Pro",
+    price: `$${PLAN_PRICES_USD.pro}`,
+    period: "/month",
+    credits: `${PLAN_CREDIT_COUNTS.pro}`,
+    creditCount: PLAN_CREDIT_COUNTS.pro,
+    badge: "Best value",
+    note: "For high-volume creators and teams running batches from ads, clients, or product lines.",
+    math: "Up to 37 premium text models or 150 image models",
+    features: [
+      "300 credits per month",
+      "Best per-credit value",
+      "Premium text-to-3D uses 8 credits",
+      "Image-to-3D uses 2 credits",
+      "Text and image generation",
+      "Saved model library",
+      "Priority support",
+    ],
+    cta: "Choose Pro",
+    emphasis: "anchor",
+  },
 ];
 
 const confidenceItems = [
   "No free tier. Every generation uses your credits.",
   "Credits attach to the signed-in account you use at checkout.",
+  "Starter Pack credits are one-time. Monthly plans renew credits each billing cycle.",
   "If generation fails, reserved credits are refunded automatically.",
 ];
 
 const pricingFaqs = [
   [
     "Which plan should I choose?",
-    "Creator is the lowest commitment. Studio is the better value if you expect to run batches of models.",
+    "Starter Pack is for a one-off first project. Creator is the lowest monthly commitment. Studio is the strongest default. Pro is for high-volume batches.",
   ],
   [
     "Can I see the generator first?",
@@ -87,12 +149,16 @@ const pricingFaqs = [
     "How are credits used?",
     "Premium text-to-3D uses 8 credits. Image-to-3D uses 2 credits. World generation shows its credit cost before you run it.",
   ],
+  [
+    "Do Starter Pack credits expire?",
+    "They are one-time credits on your signed-in account. Monthly plan credits are added each billing cycle.",
+  ],
 ];
 
 export default function PricingPage() {
   const { user, signInWithGoogle } = useAuth();
 
-  const handleSubscribe = async (plan: (typeof plans)[0]) => {
+  const handleSubscribe = async (plan: PricingOffer) => {
     let checkoutUser = user;
 
     trackEvent("pricing_checkout_started", {
@@ -208,15 +274,17 @@ export default function PricingPage() {
             ))}
           </section>
 
-          <section className="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-            {plans.map((plan) => (
+          <section className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {[starterPack, ...subscriptionPlans].map((plan) => (
               <article
                 key={plan.name}
-                className={`border p-5 ${
+                className={`flex min-h-[680px] flex-col border p-5 ${
                   plan.emphasis === "primary"
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-white/10 bg-white/[0.03]"
-                } ${plan.emphasis === "starter" ? "lg:mt-14" : ""}`}
+                    : plan.emphasis === "anchor"
+                      ? "border-primary/70 bg-white/[0.06]"
+                      : "border-white/10 bg-white/[0.03]"
+                }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -233,15 +301,23 @@ export default function PricingPage() {
                       </span>
                     </p>
                   </div>
-                  <Layers3 className="size-6 opacity-70" />
+                  {plan.emphasis === "pack" ? (
+                    <CreditCard className="size-6 opacity-70" />
+                  ) : (
+                    <Layers3 className="size-6 opacity-70" />
+                  )}
                 </div>
 
                 <div className="mt-8 border-y border-current/15 py-5">
                   <p className="font-mono text-4xl">{plan.credits}</p>
-                  <p className="mt-1 text-sm opacity-65">credits per month</p>
+                  <p className="mt-1 text-sm opacity-65">
+                    {plan.emphasis === "pack"
+                      ? "credits once"
+                      : "credits per month"}
+                  </p>
                 </div>
 
-                <p className="mt-5 min-h-12 text-sm leading-6 opacity-75">
+                <p className="mt-5 min-h-24 text-sm leading-6 opacity-75">
                   {plan.note}
                 </p>
                 <div className="mt-5 space-y-2 border border-current/15 p-4 text-sm opacity-75">
@@ -255,7 +331,7 @@ export default function PricingPage() {
                   </p>
                 </div>
 
-                <ul className="mt-8 space-y-3">
+                <ul className="mt-8 flex-1 space-y-3">
                   {plan.features.map((feature) => (
                     <li
                       key={feature}
@@ -271,7 +347,9 @@ export default function PricingPage() {
                   className={`mt-8 h-12 w-full rounded-none ${
                     plan.emphasis === "primary"
                       ? "bg-[#080a08] text-white hover:bg-[#111710]"
-                      : ""
+                      : plan.emphasis === "anchor"
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : ""
                   }`}
                   variant={
                     plan.emphasis === "primary" ? "secondary" : "outline"
@@ -286,13 +364,28 @@ export default function PricingPage() {
           </section>
 
           <section className="mt-14 border border-white/10 bg-white/[0.03]">
-            <div className="grid gap-px bg-white/10 md:grid-cols-3">
+            <div className="grid gap-px bg-white/10 md:grid-cols-4">
               {[
-                ["Feature", "Creator", "Studio"],
-                ["Premium text-to-3D", "5 runs/month", "15 runs/month"],
-                ["Image-to-3D", "20 runs/month", "60 runs/month"],
-                ["Model downloads", "Included", "Included"],
-                ["Best for", "solo creation", "batch creation"],
+                ["Feature", "Creator", "Studio", "Pro"],
+                [
+                  "Premium text-to-3D",
+                  "5 runs/month",
+                  "15 runs/month",
+                  "37 runs/month",
+                ],
+                [
+                  "Image-to-3D",
+                  "20 runs/month",
+                  "60 runs/month",
+                  "150 runs/month",
+                ],
+                ["Model downloads", "Included", "Included", "Included"],
+                [
+                  "Best for",
+                  "solo creation",
+                  "batch creation",
+                  "high-volume work",
+                ],
               ].map((row, rowIndex) =>
                 row.map((cell, cellIndex) => (
                   <div
@@ -321,7 +414,7 @@ export default function PricingPage() {
                 Know exactly what happens after checkout.
               </h2>
             </div>
-            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
+            <div className="grid gap-px border border-white/10 bg-white/10 md:grid-cols-4">
               {confidenceItems.map((item) => (
                 <div key={item} className="bg-[#0c0f0c] p-5">
                   <Check className="mb-8 size-5 text-primary" />
